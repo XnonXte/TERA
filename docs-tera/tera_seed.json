@@ -1,0 +1,1309 @@
+{
+ "meta": {
+  "dibuat": "2026-10-31",
+  "sumber": "D6: berkas 32 pemeriksaan, 6 gagal, 18 revisi (xlsx), dihasilkan otomatis; tidak diketik ulang",
+  "status": "Terverifikasi (input disalin dari halaman cetak; SR 2024 dan 2025 diuji keberadaan teksnya 89/89; SR 2023 dibaca dari teks D3 tanpa skrip). Level target = Estimasi tim",
+  "catatan": "Data demo. Hasil aturan pada data ini bersifat in-sample (aturan dirancang dari data yang sama).",
+  "toleransi": "Toleransi per pemeriksaan mengikuti D6: G1 0,15 tCO2e (emisi) dan 1 (energi, Scope 3); G2 0,1 pp, kecuali #23 (0,5) dan #29 (1,0). Ditetapkan tim"
+ },
+ "dashboard": {
+  "sumber": "SR Telkomsel 2025, hlm 147",
+  "satuan": "tCO2e",
+  "tahun": {
+   "2023": {
+    "scope1": 19866.45,
+    "scope2": 1466798.14,
+    "scope1_2": 1486664.59
+   },
+   "2024": {
+    "scope1": 19337.3,
+    "scope2": 1542604.35,
+    "scope1_2": 1561941.65
+   },
+   "2025": {
+    "scope1": 14360.3,
+    "scope2": 1721967.7,
+    "scope1_2": 1736327.9
+   }
+  },
+  "kenaikan_2025_vs_2023": {
+   "tabel_pct": 16.79,
+   "sumber_tabel": "SR Telkomsel 2025, hlm 51",
+   "callout_pct": 19.35,
+   "sumber_callout": "SR Telkomsel 2025, hlm 147",
+   "hitung_ulang_pct": 16.7935
+  },
+  "level_target": {
+   "nilai": 1189331.67,
+   "gap_ke_target": 546996.23,
+   "label": "Hitungan tim (80% x baseline 2023 versi SR 2025). Estimasi tim; bukan angka resmi Telkomsel",
+   "status": "Estimasi tim"
+  }
+ },
+ "baseline_scope1_2_2023": [
+  {
+   "versi": "SR 2023",
+   "nilai": 1400753.0,
+   "sumber": "SR Telkomsel 2023, hlm 51",
+   "kode_alasan": null
+  },
+  {
+   "versi": "SR 2024",
+   "nilai": 1454708.89,
+   "sumber": "SR Telkomsel 2024, hlm 113",
+   "selisih_absolut_vs_sebelumnya": 53955.89,
+   "selisih_pct_vs_sebelumnya": 3.8519,
+   "kode_alasan": "Unresolved",
+   "catatan_laporan": "Catatan restatement bersifat umum (SR 2024 hlm 113); sebab dan besaran per angka tidak dirinci"
+  },
+  {
+   "versi": "SR 2025",
+   "nilai": 1486664.59,
+   "sumber": "SR Telkomsel 2025, hlm 147",
+   "selisih_absolut_vs_sebelumnya": 31955.7,
+   "selisih_pct_vs_sebelumnya": 2.1967,
+   "kode_alasan": "Unresolved",
+   "catatan_laporan": "Tidak ada catatan restatement pada tabel (SR 2025 hlm 147)"
+  }
+ ],
+ "revisi_18": [
+  {
+   "no": 1,
+   "metrik": "Scope 1+2 2023",
+   "laporan_lama": "SR23",
+   "nilai_lama": 1400753.0,
+   "hlm_lama": "51",
+   "laporan_baru": "SR24",
+   "nilai_baru": 1454708.89,
+   "hlm_baru": "113",
+   "persen_selisih": 3.85192035997781,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented in 2023 and 2022 are restated due to the improvement of data collection and calculation method\"",
+   "hlm_catatan": "113",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": null
+  },
+  {
+   "no": 2,
+   "metrik": "Scope 1+2 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 1454708.89,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 1486664.59,
+   "hlm_baru": "147",
+   "persen_selisih": 2.196707548821,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "Tidak ada catatan restatement pada tabel (hanya catatan biogenic CO2 dan catatan intensitas). Paragraf hlm 37 hanya mendaftar \"Scope 1 and 2 emission\" sebagai topik direvisi, lalu menyatakan penjelasan rinci ada di bawah tabel.",
+   "hlm_catatan": "147 (tabel); 37 (daftar topik)",
+   "kategori_alasan": "TIDAK ADA",
+   "catatan_analis": null
+  },
+  {
+   "no": 3,
+   "metrik": "Scope 2 2023",
+   "laporan_lama": "SR23",
+   "nilai_lama": 1392858.0,
+   "hlm_lama": "51",
+   "laporan_baru": "SR24",
+   "nilai_baru": 1434842.44,
+   "hlm_baru": "113",
+   "persen_selisih": 3.01426563224678,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented in 2023 and 2022 are restated due to the improvement of data collection and calculation method\"",
+   "hlm_catatan": "113",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Dekomposisi: lihat sheet SR2023_Dekomposisi."
+  },
+  {
+   "no": 4,
+   "metrik": "Scope 2 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 1434842.44,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 1466798.14,
+   "hlm_baru": "147",
+   "persen_selisih": 2.227122582184,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "Tidak ada catatan restatement pada tabel (hanya catatan biogenic CO2 dan catatan intensitas). Paragraf hlm 37 hanya mendaftar \"Scope 1 and 2 emission\" sebagai topik direvisi, lalu menyatakan penjelasan rinci ada di bawah tabel.",
+   "hlm_catatan": "147; 37",
+   "kategori_alasan": "TIDAK ADA",
+   "catatan_analis": "Dekomposisi: lihat sheet SR2023_Dekomposisi."
+  },
+  {
+   "no": 5,
+   "metrik": "Scope 1 2023",
+   "laporan_lama": "SR23",
+   "nilai_lama": 7895.0,
+   "hlm_lama": "51",
+   "laporan_baru": "SR24",
+   "nilai_baru": 19866.45,
+   "hlm_baru": "113",
+   "persen_selisih": 151.633312222926,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented in 2023 and 2022 are restated due to the improvement of data collection and calculation method\"",
+   "hlm_catatan": "113",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "SR23 Scope 1 hanya solar (BTS+TTC). SR24 memuat Stationary 8,240.33 + Mobile 4,324.72 + Fugitive 7,301.40. Dugaan: kategori Mobile/Fugitive ditambahkan = ESTIMASI TIM, tidak dinyatakan laporan."
+  },
+  {
+   "no": 6,
+   "metrik": "Scope 1+2 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 1530402.95,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 1561941.65,
+   "hlm_baru": "147",
+   "persen_selisih": 2.06081019381204,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "Tidak ada catatan restatement pada tabel (hanya catatan biogenic CO2 dan catatan intensitas). Paragraf hlm 37 hanya mendaftar \"Scope 1 and 2 emission\" sebagai topik direvisi, lalu menyatakan penjelasan rinci ada di bawah tabel.",
+   "hlm_catatan": "147; 37",
+   "kategori_alasan": "TIDAK ADA",
+   "catatan_analis": null
+  },
+  {
+   "no": 7,
+   "metrik": "Scope 2 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 1511065.65,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 1542604.35,
+   "hlm_baru": "147",
+   "persen_selisih": 2.08718264491024,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "Tidak ada catatan restatement pada tabel (hanya catatan biogenic CO2 dan catatan intensitas). Paragraf hlm 37 hanya mendaftar \"Scope 1 and 2 emission\" sebagai topik direvisi, lalu menyatakan penjelasan rinci ada di bawah tabel.",
+   "hlm_catatan": "147; 37",
+   "kategori_alasan": "TIDAK ADA",
+   "catatan_analis": null
+  },
+  {
+   "no": 8,
+   "metrik": "Listrik 2024 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 6203011.01,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 6329140.9,
+   "hlm_baru": "145",
+   "persen_selisih": 2.03336556708773,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Total energy consumption data presented for 2024 and 2023 are restated based on our revised data scope\"",
+   "hlm_catatan": "145",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Catatan menyebut \"total energy consumption\"; komponen listrik diasumsikan tercakup (penilaian analis)."
+  },
+  {
+   "no": 9,
+   "metrik": "Listrik 2023 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 5894719.17,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 6022516.8,
+   "hlm_baru": "145",
+   "persen_selisih": 2.16800200848244,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Total energy consumption data presented for 2024 and 2023 are restated based on our revised data scope\"",
+   "hlm_catatan": "145",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Idem."
+  },
+  {
+   "no": 10,
+   "metrik": "Total energi 2024 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 6374794.36,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 6510919.2,
+   "hlm_baru": "145",
+   "persen_selisih": 2.13536048871072,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Total energy consumption data presented for 2024 and 2023 are restated based on our revised data scope\"",
+   "hlm_catatan": "145",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": null
+  },
+  {
+   "no": 11,
+   "metrik": "Total energi 2023 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 6067332.49,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 6202471.12,
+   "hlm_baru": "145",
+   "persen_selisih": 2.22731538485375,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Total energy consumption data presented for 2024 and 2023 are restated based on our revised data scope\"",
+   "hlm_catatan": "145",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": null
+  },
+  {
+   "no": 12,
+   "metrik": "Listrik 2023 (GJ)",
+   "laporan_lama": "SR23",
+   "nilai_lama": 5763550.0,
+   "hlm_lama": "49",
+   "laporan_baru": "SR24",
+   "nilai_baru": 5894719.17,
+   "hlm_baru": "116",
+   "persen_selisih": 2.27583989034537,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented in 2023 and 2022 are restated due to the improvement of data collection and calculation method\"",
+   "hlm_catatan": "116",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "SR23 hlm 49: 1.600.986.214 kWh = 5.763.550 GJ."
+  },
+  {
+   "no": 13,
+   "metrik": "Intensitas/TB 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 0.081,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 0.083,
+   "hlm_baru": "147",
+   "persen_selisih": 2.46913580246915,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented for intensity metric in 2023 & 2024 are restated based on our revised data collection and calculation method\"",
+   "hlm_catatan": "147",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Pembulatan 3 desimal membesarkan selisih persentase."
+  },
+  {
+   "no": 14,
+   "metrik": "Intensitas/TB 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 0.075,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 0.077,
+   "hlm_baru": "147",
+   "persen_selisih": 2.66666666666666,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented for intensity metric in 2023 & 2024 are restated based on our revised data collection and calculation method\"",
+   "hlm_catatan": "147",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Idem."
+  },
+  {
+   "no": 15,
+   "metrik": "Intensitas/Rp miliar 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 14.21,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 14.52,
+   "hlm_baru": "147",
+   "persen_selisih": 2.18156228008444,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented for intensity metric in 2023 & 2024 are restated based on our revised data collection and calculation method\"",
+   "hlm_catatan": "147",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Catatan menyebut \"intensity metric\"; intensitas per pendapatan diasumsikan tercakup."
+  },
+  {
+   "no": 16,
+   "metrik": "Intensitas/Rp miliar 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 13.5,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 13.79,
+   "hlm_baru": "147",
+   "persen_selisih": 2.14814814814814,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented for intensity metric in 2023 & 2024 are restated based on our revised data collection and calculation method\"",
+   "hlm_catatan": "147",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Idem."
+  },
+  {
+   "no": 17,
+   "metrik": "Listrik terbarukan 2024 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 9955.0,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 9995.0,
+   "hlm_baru": "145",
+   "persen_selisih": 0.401808136614767,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "Catatan hlm 145 hanya soal total energi dan bahan bakar terbarukan 2025; tidak ada catatan untuk baris listrik terbarukan.",
+   "hlm_catatan": "145",
+   "kategori_alasan": "TIDAK ADA",
+   "catatan_analis": "Selisih 40 GJ."
+  },
+  {
+   "no": 18,
+   "metrik": "Scope 3 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 134678.6,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 142270.5,
+   "hlm_baru": "148",
+   "persen_selisih": 5.63704998418457,
+   "status": "REVISI",
+   "catatan_alasan_ringkas": "\"Data presented for 2023 & 2024 are restated based on our revised data collection and calculation method\"",
+   "hlm_catatan": "148",
+   "kategori_alasan": "UMUM",
+   "catatan_analis": "Total kategori 2023 kini 142,270.5 (6 kategori) vs 134,678.60 di SR24."
+  }
+ ],
+ "tidak_direvisi_7": [
+  {
+   "no": 1,
+   "metrik": "Scope 3 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 135134.77,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 135006.1,
+   "hlm_baru": "148",
+   "persen_selisih": -0.0952160572737726,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 2,
+   "metrik": "Payload 2024 (TB)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 20386475.0,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 20386475.0,
+   "hlm_baru": "145",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 3,
+   "metrik": "Payload 2023 (TB)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 17901034.0,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 17901034.0,
+   "hlm_baru": "145",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 4,
+   "metrik": "Scope 1 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 19337.3,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 19337.3,
+   "hlm_baru": "147",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 5,
+   "metrik": "Scope 1 2023",
+   "laporan_lama": "SR24",
+   "nilai_lama": 19866.45,
+   "hlm_lama": "113",
+   "laporan_baru": "SR25",
+   "nilai_baru": 19866.45,
+   "hlm_baru": "147",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 6,
+   "metrik": "Renewable 2023 (GJ)",
+   "laporan_lama": "SR24",
+   "nilai_lama": 7341.0,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 7341.0,
+   "hlm_baru": "145",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  },
+  {
+   "no": 7,
+   "metrik": "BTS surya 2024",
+   "laporan_lama": "SR24",
+   "nilai_lama": 275.0,
+   "hlm_lama": "116",
+   "laporan_baru": "SR25",
+   "nilai_baru": 275.0,
+   "hlm_baru": "146",
+   "persen_selisih": 0.0,
+   "status": "IDENTIK"
+  }
+ ],
+ "cek_32": [
+  {
+   "no": 1,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1 2025: komponen vs total",
+   "nilai_tertulis": 14360.3,
+   "input": [
+    6391.6,
+    4369.67,
+    3596.1
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 14357.37,
+   "selisih_d6": -2.92999999999847,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Selisih -2.93 tCO2e. Total tertulis 14,360.3 pada tabel.",
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 2,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1 2024",
+   "nilai_tertulis": 19337.3,
+   "input": [
+    8179.14,
+    4324.72,
+    6833.44
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 19337.3,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 3,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1 2023",
+   "nilai_tertulis": 19866.45,
+   "input": [
+    8240.33,
+    4324.72,
+    7301.4
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 19866.45,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 4,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1+2 2025 (S1 + S2)",
+   "nilai_tertulis": 1736327.9,
+   "input": [
+    14360.3,
+    1721967.7
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1736328.0,
+   "selisih_d6": 0.100000000093132,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 5,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1+2 2024",
+   "nilai_tertulis": 1561941.65,
+   "input": [
+    19337.3,
+    1542604.35
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1561941.65,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 6,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Scope 1+2 2023",
+   "nilai_tertulis": 1486664.59,
+   "input": [
+    19866.45,
+    1466798.14
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1486664.59,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 7,
+   "kelompok": "G1",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 113,
+   "item": "Scope 1+2 2024",
+   "nilai_tertulis": 1530402.95,
+   "input": [
+    19337.3,
+    1511065.65
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1530402.95,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 8,
+   "kelompok": "G1",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 113,
+   "item": "Scope 1+2 2023",
+   "nilai_tertulis": 1454708.89,
+   "input": [
+    19866.45,
+    1434842.44
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1454708.89,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 9,
+   "kelompok": "G1",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 113,
+   "item": "Scope 1+2 2022",
+   "nilai_tertulis": 1407652.25,
+   "input": [
+    19314.35,
+    1388337.9
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 1407652.25,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 10,
+   "kelompok": "G1",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 113,
+   "item": "Scope 1 2024 (komponen)",
+   "nilai_tertulis": 19337.3,
+   "input": [
+    8179.14,
+    4324.72,
+    6833.44
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 19337.3,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 0.15,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 11,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 145,
+   "item": "Energi total 2025 (GJ)",
+   "nilai_tertulis": 6984695.3,
+   "input": [
+    183264.9,
+    13926.0,
+    6787504.4
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 6984695.3,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": "Toleransi 1 GJ (pembulatan tabel energi).",
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 12,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 145,
+   "item": "Energi total 2024 (GJ)",
+   "nilai_tertulis": 6510919.2,
+   "input": [
+    171783.3,
+    9995.0,
+    6329140.9
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 6510919.2,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 13,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 145,
+   "item": "Energi total 2023 (GJ)",
+   "nilai_tertulis": 6202471.12,
+   "input": [
+    172613.3,
+    7341.0,
+    6022516.8
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 6202471.1,
+   "selisih_d6": -0.0200000004842877,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 14,
+   "kelompok": "G1",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 116,
+   "item": "Energi total 2024 (GJ)",
+   "nilai_tertulis": 6374794.36,
+   "input": [
+    6203011.01,
+    171783.35
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 6374794.36,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 15,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 148,
+   "item": "Scope 3 total 2025 (jumlah kategori)",
+   "nilai_tertulis": 972421.0,
+   "input": [
+    30322.9,
+    132506.2,
+    164001.4,
+    7.4,
+    472.1,
+    42.0,
+    644986.2,
+    56.8,
+    26.0
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 972421.0,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 16,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 148,
+   "item": "Scope 3 total 2024",
+   "nilai_tertulis": 135006.1,
+   "input": [
+    4176.5,
+    22366.2,
+    0.5,
+    8873.2,
+    99559.4,
+    30.3
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 135006.1,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 17,
+   "kelompok": "G1",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 148,
+   "item": "Scope 3 total 2023",
+   "nilai_tertulis": 142270.5,
+   "input": [
+    10490.7,
+    20623.6,
+    72.7,
+    3927.4,
+    99421.1,
+    7735.0
+   ],
+   "rumus_d6": "SUM(G:O) komponen = total",
+   "nilai_hitung_d6": 142270.5,
+   "selisih_d6": 0.0,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "alpha"
+  },
+  {
+   "no": 18,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 51,
+   "item": "S1+2 naik 2025 vs 2023 (tertulis hlm 51)",
+   "nilai_tertulis": 16.79,
+   "input": [
+    1736327.9,
+    1486664.59
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 16.7935196465532,
+   "selisih_d6": 0.00351964655322234,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 19,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "S1+2 naik 2025 vs 2023 (callout hlm 147)",
+   "nilai_tertulis": 19.35,
+   "input": [
+    1736327.9,
+    1486664.59
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 16.7935196465532,
+   "selisih_d6": -2.55648035344678,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Callout 19.35% vs tabel 16.79% (hlm 51 & rumus).",
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 20,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 146,
+   "item": "Energi total naik YoY 2025",
+   "nilai_tertulis": 7.28,
+   "input": [
+    6984695.3,
+    6510919.2
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 7.27663921862216,
+   "selisih_d6": -0.00336078137783957,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 21,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 146,
+   "item": "Listrik bersih terbarukan +39.33%",
+   "nilai_tertulis": 39.33,
+   "input": [
+    13926.0,
+    9995.0
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 39.3296648324162,
+   "selisih_d6": -0.000335167583799034,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 22,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 146,
+   "item": "BTS surya +31.27%",
+   "nilai_tertulis": 31.27,
+   "input": [
+    361.0,
+    275.0
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 31.2727272727273,
+   "selisih_d6": 0.0027272727272738,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 23,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 144,
+   "item": "Penghematan efisiensi +302% vs 2024",
+   "nilai_tertulis": 302.0,
+   "input": [
+    71472.84,
+    17775.45
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 302.087373315444,
+   "selisih_d6": 0.0873733154434717,
+   "toleransi_d6": 0.5,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": "Toleransi 0.5 pp (angka tertulis dibulatkan ke bilangan bulat).",
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 24,
+   "kelompok": "G2",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 112,
+   "item": "Emisi naik 2024 vs 2023 (+5.2%)",
+   "nilai_tertulis": 5.2,
+   "input": [
+    1530402.95,
+    1454708.89
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 5.20338196324628,
+   "selisih_d6": 0.00338196324627837,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 25,
+   "kelompok": "G2",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 116,
+   "item": "Renewable +35.61%",
+   "nilai_tertulis": 35.61,
+   "input": [
+    9955.0,
+    7341.0
+   ],
+   "rumus_d6": "(G/H-1)*100",
+   "nilai_hitung_d6": 35.6082277618853,
+   "selisih_d6": -0.00177223811469673,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 26,
+   "kelompok": "G2",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 113,
+   "item": "Intensitas turun 7.62% (2024 vs 2023)",
+   "nilai_tertulis": 7.62,
+   "input": [
+    1530402.95,
+    20386475.0,
+    1454708.89,
+    17901034.0
+   ],
+   "rumus_d6": "-((G/H)/(I/J)-1)*100",
+   "nilai_hitung_d6": 7.62261168548961,
+   "selisih_d6": 0.00261168548961077,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": null,
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 27,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 51,
+   "item": "Intensitas turun 2023-2025 (tertulis 10.82%)",
+   "nilai_tertulis": 10.82,
+   "input": [
+    1736327.9,
+    23444838.0,
+    1486664.59,
+    17901034.0
+   ],
+   "rumus_d6": "-((G/H)/(I/J)-1)*100",
+   "nilai_hitung_d6": 10.8236633508572,
+   "selisih_d6": 0.00366335085714908,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": "Hitung 10.83%; selisih 0.01 pp = pembulatan.",
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 28,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Intensitas turun 8.86% (callout; basis 2023-2025)",
+   "nilai_tertulis": 8.86,
+   "input": [
+    1736327.9,
+    23444838.0,
+    1486664.59,
+    17901034.0
+   ],
+   "rumus_d6": "-((G/H)/(I/J)-1)*100",
+   "nilai_hitung_d6": 10.8236633508572,
+   "selisih_d6": 1.96366335085715,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Angka 8.86% tidak cocok dengan basis 2023-2025 (10.83%). Basis lain tidak ditemukan; lihat Diskontinuitas D2.",
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 29,
+   "kelompok": "G2",
+   "laporan": "SR24",
+   "dokumen": "Sustainability Report Telkomsel 2024 (D2)",
+   "halaman_cetak": 112,
+   "item": "Scope 2 = 98% dari S1+2",
+   "nilai_tertulis": 98.0,
+   "input": [
+    1511065.65,
+    1530402.95
+   ],
+   "rumus_d6": "G/H*100",
+   "nilai_hitung_d6": 98.7364569573,
+   "selisih_d6": 0.736456957300035,
+   "toleransi_d6": 1.0,
+   "hasil_d6": "LOLOS",
+   "catatan_d6": "Toleransi 1.0 pp (tertulis bilangan bulat).",
+   "aturan_prototipe": "beta"
+  },
+  {
+   "no": 30,
+   "kelompok": "G5",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 147,
+   "item": "Callout intensitas \"85,207.04 tonCO2e/TB\" -> emisi implisit 2023 vs tabel",
+   "nilai_tertulis": 1486664.59,
+   "input": [
+    85207.04,
+    17901034.0
+   ],
+   "rumus_d6": "(G x H)/1.000.000 ; satuan angka callout = gCO2e/TB (x1000), bukan ton",
+   "nilai_hitung_d6": 1525294.12007936,
+   "selisih_d6": 38629.5300793599,
+   "toleransi_d6": 8950.517,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Toleransi = 0.0005 tCO2e/TB x payload (pembulatan 3 desimal intensitas tabel). Label satuan \"tonCO2e/TB\" salah faktor 1000.",
+   "aturan_prototipe": "di_luar_cakupan"
+  },
+  {
+   "no": 31,
+   "kelompok": "G5",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 181,
+   "item": "GSMA 1.3b: intensitas energi jaringan (MWh/PB), tertulis 5.17",
+   "nilai_tertulis": 5.17,
+   "input": [
+    1425396.53,
+    23444838.0
+   ],
+   "rumus_d6": "G / (H/1000)",
+   "nilai_hitung_d6": 60.7978835255761,
+   "selisih_d6": 55.6278835255761,
+   "toleransi_d6": 0.01,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Basis total energi (1,940,193.14 MWh) memberi 82.76; tidak ada basis yang menghasilkan 5.17.",
+   "aturan_prototipe": "di_luar_cakupan"
+  },
+  {
+   "no": 32,
+   "kelompok": "G2",
+   "laporan": "SR25",
+   "dokumen": "Sustainability Report Telkomsel 2025 (D1)",
+   "halaman_cetak": 181,
+   "item": "GSMA 1.3b: perubahan intensitas \"turun 19.50%\" (basis SR24 86.86)",
+   "nilai_tertulis": -19.5,
+   "input": [
+    1425396.53,
+    23444838.0,
+    86.86
+   ],
+   "rumus_d6": "(G/(H/1000)/I-1)*100",
+   "nilai_hitung_d6": -30.0047392061063,
+   "selisih_d6": -10.5047392061063,
+   "toleransi_d6": 0.1,
+   "hasil_d6": "GAGAL",
+   "catatan_d6": "Basis jaringan -30.0%; basis total energi -4.7%; basis 5.17 -94.0%. Tidak ada yang -19.5%.",
+   "aturan_prototipe": "di_luar_cakupan"
+  }
+ ],
+ "hasil_acuan": {
+  "aturan_alpha": "Jumlah komponen (input) dibandingkan dengan nilai tertulis; ditandai bila |selisih| > toleransi. Cakupan: kelompok G1 (#1-#17)",
+  "aturan_beta": "Persentase dihitung ulang dari rumus D6 pada input; ditandai bila |selisih| > toleransi. Cakupan: G2 #18-#29",
+  "di_luar_cakupan": [
+   30,
+   31,
+   32
+  ],
+  "ditandai": [
+   1,
+   19,
+   28
+  ],
+  "jumlah_tercakup": 29,
+  "tercakup_tidak_ditandai": 26,
+  "false_positive_pada_tercakup_lolos": 0,
+  "rincian": {
+   "1": {
+    "nilai_hitung": 14357.37,
+    "selisih": -2.93,
+    "toleransi": 0.15,
+    "ditandai": true
+   },
+   "2": {
+    "nilai_hitung": 19337.3,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "3": {
+    "nilai_hitung": 19866.45,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "4": {
+    "nilai_hitung": 1736328.0,
+    "selisih": 0.1,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "5": {
+    "nilai_hitung": 1561941.65,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "6": {
+    "nilai_hitung": 1486664.59,
+    "selisih": -0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "7": {
+    "nilai_hitung": 1530402.95,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "8": {
+    "nilai_hitung": 1454708.89,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "9": {
+    "nilai_hitung": 1407652.25,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "10": {
+    "nilai_hitung": 19337.3,
+    "selisih": 0.0,
+    "toleransi": 0.15,
+    "ditandai": false
+   },
+   "11": {
+    "nilai_hitung": 6984695.3,
+    "selisih": 0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "12": {
+    "nilai_hitung": 6510919.2,
+    "selisih": 0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "13": {
+    "nilai_hitung": 6202471.1,
+    "selisih": -0.02,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "14": {
+    "nilai_hitung": 6374794.36,
+    "selisih": -0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "15": {
+    "nilai_hitung": 972421.0,
+    "selisih": 0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "16": {
+    "nilai_hitung": 135006.1,
+    "selisih": 0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "17": {
+    "nilai_hitung": 142270.5,
+    "selisih": 0.0,
+    "toleransi": 1.0,
+    "ditandai": false
+   },
+   "18": {
+    "nilai_hitung": 16.79352,
+    "selisih": 0.00352,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "19": {
+    "nilai_hitung": 16.79352,
+    "selisih": -2.55648,
+    "toleransi": 0.1,
+    "ditandai": true
+   },
+   "20": {
+    "nilai_hitung": 7.276639,
+    "selisih": -0.003361,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "21": {
+    "nilai_hitung": 39.329665,
+    "selisih": -0.000335,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "22": {
+    "nilai_hitung": 31.272727,
+    "selisih": 0.002727,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "23": {
+    "nilai_hitung": 302.087373,
+    "selisih": 0.087373,
+    "toleransi": 0.5,
+    "ditandai": false
+   },
+   "24": {
+    "nilai_hitung": 5.203382,
+    "selisih": 0.003382,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "25": {
+    "nilai_hitung": 35.608228,
+    "selisih": -0.001772,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "26": {
+    "nilai_hitung": 7.622612,
+    "selisih": 0.002612,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "27": {
+    "nilai_hitung": 10.823663,
+    "selisih": 0.003663,
+    "toleransi": 0.1,
+    "ditandai": false
+   },
+   "28": {
+    "nilai_hitung": 10.823663,
+    "selisih": 1.963663,
+    "toleransi": 0.1,
+    "ditandai": true
+   },
+   "29": {
+    "nilai_hitung": 98.736457,
+    "selisih": 0.736457,
+    "toleransi": 1.0,
+    "ditandai": false
+   }
+  }
+ }
+}
