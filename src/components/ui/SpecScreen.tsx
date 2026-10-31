@@ -92,15 +92,3 @@ export function SpecPanel({
     </div>
   );
 }
-
-// Sementara: dipakai halaman yang belum dipindahkan ke kerangka asli.
-export default function SpecScreen({ title, purpose, extraNote }: { title: string; purpose: string; extraNote?: string }) {
-  return (
-    <div className="space-y-6">
-      <div className="pb-6 border-b border-[#e5eeff]">
-        <h1 className="text-[26px] font-bold text-[#0b1c30] tracking-tight">{title}</h1>
-      </div>
-      <SpecNotice purpose={purpose} extraNote={extraNote} />
-    </div>
-  );
-}
