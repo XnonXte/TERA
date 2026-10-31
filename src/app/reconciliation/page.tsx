@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw, Info } from "lucide-react";
+import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import KpiCard from "@/components/ui/KpiCard";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -19,9 +19,6 @@ import {
   hitungJenisCatatan,
 } from "@/lib/reconciliation";
 import { fmtAngka, fmtBertanda, fmtPersen, KOSONG } from "@/lib/format";
-
-const TEKS_SIMULASI =
-  "Simulasi. Persetujuan disimulasikan di browser ini, tanpa login dan tanpa pemisahan peran. Approved ≠ diaudit independen.";
 
 const LABEL_AKSI: Record<AksiSimulasi, string> = {
   ajukan: "Ajukan untuk review",
@@ -87,12 +84,6 @@ export default function ReconciliationPage() {
         title="Versi baseline Scope 1+2 tahun 2023"
         description="Tiga laporan menuliskan angka berbeda untuk baseline yang sama. Semua versi tetap terlihat, termasuk yang tidak aktif."
       />
-
-      {/* Simulation notice (callout style from Data Quality) */}
-      <div className="bg-[#fffbeb] border border-[#fef3c7] p-4 rounded-xl flex items-start gap-2.5">
-        <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
-        <div className="text-[13px] text-[#78350f] leading-relaxed">{TEKS_SIMULASI}</div>
-      </div>
 
       {/* Baseline Version Selection Card */}
       <div className="bg-white p-5 rounded-xl border border-[#e5eeff] shadow-sm space-y-4">
@@ -264,7 +255,6 @@ export default function ReconciliationPage() {
             <ShieldCheck className="w-5 h-5 text-[#b80035]" />
             <h3 className="text-[16px] font-bold text-[#0b1c30]">Persetujuan (simulasi)</h3>
           </div>
-          <span className="text-[11px] font-semibold text-[#5c5e64] max-w-xl">{TEKS_SIMULASI}</span>
         </div>
 
         <p className="text-[13px] text-[#0b1c30]">
