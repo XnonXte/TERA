@@ -1,127 +1,201 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
-  Filter,
   RotateCw,
-  Upload,
   AlertTriangle,
   AlertCircle,
   CheckCircle2,
-  Eye,
-  XCircle,
+  ShieldCheck,
+  ListChecks,
+  ArrowUpDown,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import KpiCard from "@/components/ui/KpiCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore } from "@/stores/useTeraStore";
+import { SEED, Cek, sumberLaporan, namaLaporan } from "@/lib/seed";
+import { HasilCek } from "@/lib/rules";
+import { INFO_ATURAN, TEKS_HASIL, labelHasil, satuanCek, LabelHasil } from "@/lib/dq";
+import { fmtAngka, fmtTetap, fmtBertanda, KOSONG } from "@/lib/format";
 
-export default function DataQualityPage() {
-  const {
-    records,
-    openDrawer,
-    runValidation,
-    activeFilterScope,
-    setFilterScope,
-    activeFilterStatus,
-    setFilterStatus,
-    activeFilterIssueType,
-    setFilterIssueType,
-  } = useTeraStore();
+type KolomUrut = "no" | "item" | "sumber" | "tertulis" | "hitung" | "selisih" | "toleransi" | "aturan" | "hasil";
 
-  const [search, setSearch] = useState("");
+// Hasil aplikasi memakai StatusBadge asli: Warning (ditandai), Valid (tidak ditandai), abu (di luar cakupan).
+const STATUS_BADGE: Record<LabelHasil, string> = {
+  ditandai: "warning",
+  tidak: "valid",
+  luar: "luar",
+  belum: "belum",
+};
 
-  // Derived counts
-  const totalCount = records.length;
-  const criticalCount = records.filter((r) => r.validationStatus === "error" && !r.resolved).length;
-  const warningCount = records.filter((r) => r.validationStatus === "warning" && !r.resolved).length;
-  const resolvedCount = records.filter((r) => r.resolved).length;
-  const healthRate = (((totalCount - criticalCount - warningCount) / totalCount) * 100).toFixed(1);
+const daftarNo = (xs: number[]) => (xs.length ? xs.map((n) => `#${n}`).join(", ") : KOSONG);
 
-  // Filtered records
-  const filtered = records.filter((r) => {
-    if (activeFilterScope !== "All" && r.scope !== activeFilterScope) return false;
-    if (activeFilterStatus === "Critical" && (r.validationStatus !== "error" || r.resolved)) return false;
-    if (activeFilterStatus === "Warning" && (r.validationStatus !== "warning" || r.resolved)) return false;
-    if (activeFilterStatus === "Valid" && r.validationStatus !== "valid" && !r.resolved) return false;
-    if (activeFilterStatus === "Resolved" && !r.resolved) return false;
+function DataQualityContent() {
+  const params = useSearchParams();
+  const { hasilAturan, jalankanAturanDQ, bukaCek } = useTeraStore();
+  const cek = SEED.cek_32;
 
-    if (activeFilterIssueType !== "All" && r.issueType !== activeFilterIssueType) return false;
+  const [fAturan, setFAturan] = useState("semua");
+  const [fHasil, setFHasil] = useState("semua");
+  const [fLaporan, setFLaporan] = useState("semua");
+  const [cari, setCari] = useState("");
+  const [urut, setUrut] = useState<{ kolom: KolomUrut; naik: boolean }>({ kolom: "no", naik: true });
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const matchId = r.id.toLowerCase().includes(q);
-      const matchMetric = r.metric.toLowerCase().includes(q);
-      const matchSource = r.sourceRef.toLowerCase().includes(q);
-      const matchIssue = (r.issueTitle || "").toLowerCase().includes(q);
-      if (!matchId && !matchMetric && !matchSource && !matchIssue) return false;
-    }
+  // Aturan dijalankan sekali saat halaman pertama dibuka (di browser).
+  useEffect(() => {
+    if (!hasilAturan) jalankanAturanDQ();
+  }, [hasilAturan, jalankanAturanDQ]);
 
-    return true;
-  });
+  // Tautan langsung: /data-quality?cek=19 membuka detail; ?q=... dari pencarian header mengisi kolom cari.
+  const paramCek = params.get("cek");
+  const paramQ = params.get("q");
+  useEffect(() => {
+    const no = Number(paramCek);
+    if (no && cek.some((c) => c.no === no)) bukaCek(no);
+  }, [paramCek, cek, bukaCek]);
+  useEffect(() => {
+    if (paramQ !== null) setCari(paramQ);
+  }, [paramQ]);
+
+  const hasilByNo = useMemo(() => {
+    const m = new Map<number, HasilCek>();
+    hasilAturan?.hasil.forEach((h) => m.set(h.no, h));
+    return m;
+  }, [hasilAturan]);
+
+  const laporanList = useMemo(() => Array.from(new Set(cek.map((c) => c.laporan))).sort(), [cek]);
+  const r = hasilAturan?.ringkasan;
+
+  const baris = useMemo(() => {
+    const q = cari.trim().toLowerCase();
+    const xs = cek.filter((c) => {
+      const h = hasilByNo.get(c.no);
+      if (fAturan !== "semua" && c.aturan_prototipe !== fAturan) return false;
+      if (fHasil !== "semua" && labelHasil(c, h) !== fHasil) return false;
+      if (fLaporan !== "semua" && c.laporan !== fLaporan) return false;
+      if (q && !`#${c.no} ${c.item} ${namaLaporan(c.laporan)} hlm ${c.halaman_cetak}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const nilai = (c: Cek): number | string => {
+      const h = hasilByNo.get(c.no);
+      switch (urut.kolom) {
+        case "no": return c.no;
+        case "item": return c.item;
+        case "sumber": return `${c.laporan}-${String(c.halaman_cetak).padStart(4, "0")}`;
+        case "tertulis": return c.nilai_tertulis;
+        case "hitung": return h?.hitung ?? -Infinity;
+        case "selisih": return h?.selisih ?? -Infinity;
+        case "toleransi": return c.toleransi_d6;
+        case "aturan": return c.aturan_prototipe;
+        case "hasil": return labelHasil(c, h);
+      }
+    };
+    return [...xs].sort((a, b) => {
+      const va = nilai(a);
+      const vb = nilai(b);
+      const d = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb));
+      return urut.naik ? d : -d;
+    });
+  }, [cek, hasilByNo, fAturan, fHasil, fLaporan, cari, urut]);
+
+  const adaFilter = fAturan !== "semua" || fHasil !== "semua" || fLaporan !== "semua" || cari !== "";
+
+  const th = (k: KolomUrut, label: string, kanan = false) => (
+    <th className={`py-3 px-3 ${kanan ? "text-right" : ""}`}>
+      <button
+        type="button"
+        onClick={() => setUrut((u) => ({ kolom: k, naik: u.kolom === k ? !u.naik : true }))}
+        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#0b1c30]"
+      >
+        {label}
+        <ArrowUpDown className={`w-3 h-3 ${urut.kolom === k ? "text-[#b80035]" : "opacity-40"}`} />
+      </button>
+    </th>
+  );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
       <PageHeader
-        badge="QUALITY ASSURANCE"
-        title="Data Quality & Anomaly Center"
-        description="Pre-ingestion validation rules (DQ-01 to DQ-07), automated anomaly detection, and finding resolution workbench for Telkomsel GHG telemetry."
+        badge="DATA QUALITY CENTER"
+        title="Pemeriksaan konsistensi angka laporan"
+        description="32 pemeriksaan dari berkas D6 pada laporan keberlanjutan Telkomsel 2023-2025. Aplikasi menjalankan aturan α (DQ-08) dan β (DQ-09) di browser."
         actions={
-          <>
-            <button
-              type="button"
-              onClick={runValidation}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
-            >
-              <RotateCw className="w-4 h-4 text-[#5c5e64]" />
-              <span>Run Validation Engine</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => alert("Telemetry ingestion pipeline active: 4 API streams connected.")}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0b1c30] rounded-lg text-[13px] font-semibold text-white hover:bg-[#1a2d45] transition-colors shadow"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Import Telemetry</span>
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={jalankanAturanDQ}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
+          >
+            <RotateCw className="w-4 h-4 text-[#5c5e64]" />
+            <span>Jalankan aturan</span>
+          </button>
         }
       />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
-          label="Total Records"
-          value={totalCount}
-          unit="Records"
-          subtitle="Jan–Dec 2025 activity logs"
-          badge={{ text: "100% Coverage", variant: "green" }}
+          label="Total"
+          value={cek.length}
+          unit="pemeriksaan"
+          badge={{ text: r ? `${r.tercakup} dalam cakupan` : KOSONG, variant: "blue" }}
+          icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />}
         />
         <KpiCard
-          label="Critical Violations"
-          value={criticalCount}
-          unit="Errors"
-          delta={{ value: "DQ-01 / DQ-02", isNeutral: true, label: "blocking" }}
-          subtitle="Requires immediate remediation"
-          icon={<AlertCircle className="w-4 h-4 text-[#b80035]" />}
-        />
-        <KpiCard
-          label="Variance Warnings"
-          value={warningCount}
-          unit="Warnings"
-          subtitle="Spikes & boundary additions (DQ-06)"
+          label="Ditandai"
+          value={r ? r.ditandai.length : KOSONG}
+          unit="pemeriksaan"
+          badge={{ text: "Warning", variant: "amber" }}
+          subtitle={r ? daftarNo(r.ditandai) : undefined}
           icon={<AlertTriangle className="w-4 h-4 text-[#d97706]" />}
         />
         <KpiCard
-          label="Quality Pass Rate"
-          value={`${healthRate}%`}
-          unit="Compliant"
-          badge={{ text: `${resolvedCount} Resolved`, variant: "green" }}
-          subtitle="Meets ISO 14064-1 audit standard"
+          label="Tidak ditandai"
+          value={r ? r.tidakDitandai : KOSONG}
+          unit="pemeriksaan"
+          subtitle="Dalam cakupan aturan"
           icon={<CheckCircle2 className="w-4 h-4 text-[#00675e]" />}
         />
+        <KpiCard
+          label="False positive"
+          value={r ? r.falsePositive : KOSONG}
+          unit="pemeriksaan"
+          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
+        />
+        <KpiCard
+          label="Luar cakupan"
+          value={r ? r.diLuarCakupan.length : KOSONG}
+          unit="pemeriksaan"
+          subtitle={r ? daftarNo(r.diLuarCakupan) : undefined}
+          icon={<AlertCircle className="w-4 h-4 text-[#5c5e64]" />}
+        />
+      </div>
+
+      {/* Rule panel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {(["alpha", "beta"] as const).map((a) => {
+          const p = r?.perAturan[a];
+          return (
+            <div key={a} className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[14px] font-bold text-[#0b1c30]">
+                  Aturan {INFO_ATURAN[a].simbol} ({INFO_ATURAN[a].ruleId})
+                </h3>
+                {p && <StatusBadge status={p.ditandai > 0 ? "warning" : "valid"} size="sm" label={`${p.ditandai} ditandai`} />}
+              </div>
+              <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN[a].nama}</p>
+              <p className="text-[13px] text-[#0b1c30]">{p ? `#${p.dari}-#${p.sampai} · ${p.jumlah} pemeriksaan` : KOSONG}</p>
+            </div>
+          );
+        })}
+        <div className="bg-white rounded-xl border border-dashed border-[#c4c6cd] p-5 space-y-1.5">
+          <h3 className="text-[14px] font-bold text-[#0b1c30]">Aturan {INFO_ATURAN.di_luar_cakupan.simbol}</h3>
+          <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN.di_luar_cakupan.nama}</p>
+          <p className="text-[13px] text-[#0b1c30]">{r ? daftarNo(r.diLuarCakupan) : KOSONG}</p>
+        </div>
       </div>
 
       {/* Filter and Control Bar */}
@@ -131,73 +205,71 @@ export default function DataQualityPage() {
           <Search className="w-4 h-4 text-[#5c5e64] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search Record ID, Facility, Metric..."
+            value={cari}
+            onChange={(e) => setCari(e.target.value)}
+            aria-label="Cari pemeriksaan"
+            placeholder="Cari…"
             className="w-full h-9 pl-9 pr-3 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035]"
           />
         </div>
 
         {/* Filter Dropdowns */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Scope Filter */}
           <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Scope:</span>
+            <span className="font-semibold text-[#5c5e64]">Aturan:</span>
             <select
-              value={activeFilterScope}
-              onChange={(e) => setFilterScope(e.target.value)}
+              aria-label="Filter aturan"
+              value={fAturan}
+              onChange={(e) => setFAturan(e.target.value)}
               className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Scopes</option>
-              <option value="Scope 1">Scope 1</option>
-              <option value="Scope 2">Scope 2</option>
+              <option value="semua">Semua aturan</option>
+              <option value="alpha">α (DQ-08)</option>
+              <option value="beta">β (DQ-09)</option>
+              <option value="di_luar_cakupan">Di luar cakupan</option>
             </select>
           </div>
 
-          {/* Status Filter */}
           <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Status:</span>
+            <span className="font-semibold text-[#5c5e64]">Hasil:</span>
             <select
-              value={activeFilterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              aria-label="Filter hasil"
+              value={fHasil}
+              onChange={(e) => setFHasil(e.target.value)}
               className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Statuses</option>
-              <option value="Critical">Critical (Error)</option>
-              <option value="Warning">Warning</option>
-              <option value="Valid">Valid</option>
-              <option value="Resolved">Resolved</option>
+              <option value="semua">Semua hasil</option>
+              <option value="ditandai">Ditandai</option>
+              <option value="tidak">Tidak ditandai</option>
+              <option value="luar">Di luar cakupan</option>
             </select>
           </div>
 
-          {/* Issue Type Filter */}
           <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Rule:</span>
+            <span className="font-semibold text-[#5c5e64]">Laporan:</span>
             <select
-              value={activeFilterIssueType}
-              onChange={(e) => setFilterIssueType(e.target.value)}
+              aria-label="Filter laporan"
+              value={fLaporan}
+              onChange={(e) => setFLaporan(e.target.value)}
               className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Rules</option>
-              <option value="missing_data">DQ-01: Missing Value</option>
-              <option value="unit_mismatch">DQ-02: Unit Mismatch</option>
-              <option value="unusual_increase">DQ-06: High Variance</option>
-              <option value="invalid_source">DQ-07: Missing Source</option>
+              <option value="semua">Semua laporan</option>
+              {laporanList.map((l) => (
+                <option key={l} value={l}>
+                  {namaLaporan(l)}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Reset button */}
-          {(activeFilterScope !== "All" ||
-            activeFilterStatus !== "All" ||
-            activeFilterIssueType !== "All" ||
-            search !== "") && (
+          {adaFilter && (
             <button
               type="button"
               onClick={() => {
-                setFilterScope("All");
-                setFilterStatus("All");
-                setFilterIssueType("All");
-                setSearch("");
+                setFAturan("semua");
+                setFHasil("semua");
+                setFLaporan("semua");
+                setCari("");
               }}
               className="text-[12px] font-semibold text-[#b80035] hover:underline"
             >
@@ -207,114 +279,91 @@ export default function DataQualityPage() {
         </div>
       </div>
 
-      {/* Records Table */}
+      {/* Checks Table */}
       <div className="bg-white rounded-xl border border-[#e5eeff] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Record ID</th>
-                <th className="py-3 px-4">Period</th>
-                <th className="py-3 px-4">Scope</th>
-                <th className="py-3 px-4">Metric & Facility</th>
-                <th className="py-3 px-4">Value / Unit</th>
-                <th className="py-3 px-4">Validation Status</th>
-                <th className="py-3 px-4">Issue Description / Rule</th>
-                <th className="py-3 px-4 text-right">Action</th>
+                {th("no", "#")}
+                {th("item", "Pemeriksaan")}
+                {th("sumber", "Sumber")}
+                {th("tertulis", "Tertulis", true)}
+                {th("hitung", "Hitung ulang", true)}
+                {th("selisih", "Selisih", true)}
+                {th("toleransi", "Toleransi", true)}
+                {th("aturan", "Aturan")}
+                {th("hasil", "Hasil aplikasi")}
+                <th className="py-3 px-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
-              {filtered.length === 0 ? (
+              {baris.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-[#5c5e64]">
-                    No emission records match the selected filter criteria.
+                  <td colSpan={10} className="py-12 text-center text-[#5c5e64]">
+                    Tidak ada pemeriksaan yang cocok dengan filter.
                   </td>
                 </tr>
               ) : (
-                filtered.map((record) => {
-                  const isError = record.validationStatus === "error" && !record.resolved;
-                  const isWarn = record.validationStatus === "warning" && !record.resolved;
-
+                baris.map((c) => {
+                  const h = hasilByNo.get(c.no);
+                  const u = satuanCek(c);
+                  const jenis = labelHasil(c, h);
+                  const luar = c.aturan_prototipe === "di_luar_cakupan";
                   return (
                     <tr
-                      key={record.id}
+                      key={c.no}
                       className="hover:bg-[#f8f9ff] transition-colors cursor-pointer group"
-                      onClick={() => openDrawer(record)}
+                      onClick={() => bukaCek(c.no)}
                     >
-                      <td className="py-3 px-4 font-bold text-[#0b1c30]">
-                        {record.id}
+                      <td className="py-3 px-3 font-bold text-[#0b1c30]">{c.no}</td>
+                      <td className="py-3 px-3 min-w-[170px]">
+                        <div className="font-semibold text-[#0b1c30]">{c.item}</div>
                       </td>
-                      <td className="py-3 px-4 text-[#5c5e64]">
-                        {record.period}
+                      <td className="py-3 px-3 text-[#5c5e64] min-w-[110px]">
+                        {sumberLaporan(c.laporan, c.halaman_cetak)}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
-                          {record.scope}
-                        </span>
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        <div className="font-bold text-[#0b1c30]">{fmtAngka(c.nilai_tertulis)}</div>
+                        <div className="text-[11px] text-[#5c5e64]">{u.nilai}</div>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-[#0b1c30]">
-                          {record.metric}
+                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#0b1c30]">
+                        {h?.hitung != null ? fmtTetap(h.hitung) : KOSONG}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        <div className={`font-bold ${jenis === "ditandai" ? "text-[#b80035]" : "text-[#0b1c30]"}`}>
+                          {h?.selisih != null ? fmtBertanda(h.selisih) : KOSONG}
                         </div>
-                        <div className="text-[11px] text-[#5c5e64] truncate max-w-xs">
-                          {record.sourceRef || "(no source ref)"}
-                        </div>
+                        {h?.selisih != null && <div className="text-[11px] text-[#5c5e64]">{u.selisih}</div>}
                       </td>
-                      <td className="py-3 px-4">
-                        <div
-                          className={`font-bold ${
-                            record.value === null
-                              ? "text-[#b80035]"
-                              : "text-[#0b1c30]"
-                          }`}
-                        >
-                          {record.value === null
-                            ? "(missing)"
-                            : record.value.toLocaleString()}
-                        </div>
-                        <div className="text-[11px] text-[#5c5e64]">
-                          {record.unit}
-                        </div>
+                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#5c5e64]">
+                        {luar ? KOSONG : fmtAngka(c.toleransi_d6)}
                       </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge
-                          status={
-                            record.resolved
-                              ? "resolved"
-                              : record.validationStatus
-                          }
-                          label={
-                            record.resolved
-                              ? "Resolved"
-                              : isError
-                              ? "Critical"
-                              : isWarn
-                              ? "Warning"
-                              : "Valid"
-                          }
-                          size="sm"
-                        />
-                      </td>
-                      <td className="py-3 px-4 max-w-xs">
-                        <div className="text-[12px] text-[#0b1c30] truncate font-medium">
-                          {record.issueTitle || (record.resolved ? "Resolved with verified note" : "Valid record")}
-                        </div>
-                        {record.ruleId && (
-                          <div className="text-[11px] text-[#5c5e64] font-mono">
-                            Rule: {record.ruleId}
-                          </div>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        {luar ? (
+                          KOSONG
+                        ) : (
+                          <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
+                            {INFO_ATURAN[c.aturan_prototipe].simbol} {INFO_ATURAN[c.aturan_prototipe].ruleId}
+                          </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-3 min-w-[150px]">
+                        <div className="max-w-[160px]">
+                          <StatusBadge status={STATUS_BADGE[jenis]} label={TEKS_HASIL[jenis]} size="sm" showIcon={jenis !== "luar"} />
+                        </div>
+                        {luar && <div className="text-[11px] text-[#5c5e64] mt-1">Keterangan D6: {c.hasil_d6}</div>}
+                      </td>
+                      <td className="py-3 px-3 text-right">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            openDrawer(record);
+                            bukaCek(c.no);
                           }}
-                          className="px-3 py-1 rounded text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors"
+                          className="px-3 py-1 rounded text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors whitespace-nowrap"
                         >
-                          Inspect
+                          Lihat detail
                         </button>
                       </td>
                     </tr>
@@ -328,12 +377,19 @@ export default function DataQualityPage() {
         {/* Table footer count */}
         <div className="p-4 bg-[#f8f9ff] border-t border-[#e5eeff] flex items-center justify-between text-[12px] text-[#5c5e64]">
           <div>
-            Showing <span className="font-bold text-[#0b1c30]">{filtered.length}</span> of{" "}
-            <span className="font-bold text-[#0b1c30]">{records.length}</span> records
+            Menampilkan <span className="font-bold text-[#0b1c30]">{baris.length}</span> dari{" "}
+            <span className="font-bold text-[#0b1c30]">{cek.length}</span> pemeriksaan
           </div>
-          <div>All records evaluated against Telkomsel GHG Data Quality Protocol</div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DataQualityPage() {
+  return (
+    <Suspense fallback={null}>
+      <DataQualityContent />
+    </Suspense>
   );
 }

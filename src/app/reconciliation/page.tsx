@@ -1,112 +1,89 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  ArrowLeftRight,
-  ShieldCheck,
-  AlertTriangle,
-  CheckCircle2,
-  FileText,
-  Clock,
-  HelpCircle,
-} from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
+import Tooltip from "@/components/ui/Tooltip";
 import KpiCard from "@/components/ui/KpiCard";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { useTeraStore } from "@/stores/useTeraStore";
-import { calculateDifference, isVarianceThresholdExceeded } from "@/lib/calculations";
+import { useTeraStore, HasilAksi } from "@/stores/useTeraStore";
+import {
+  VERSI,
+  cariVersi,
+  bandingkanVersi,
+  aksiTersedia,
+  variansScope,
+  LABEL_STATUS,
+  AksiSimulasi,
+  REVISI,
+  TIDAK_DIREVISI,
+  hitungJenisCatatan,
+} from "@/lib/reconciliation";
+import { fmtAngka, fmtBertanda, fmtPersen, KOSONG } from "@/lib/format";
+
+const LABEL_AKSI: Record<AksiSimulasi, string> = {
+  ajukan: "Ajukan untuk review",
+  setujui: "Setujui (simulasi)",
+  tolak: "Tolak (simulasi)",
+};
 
 export default function ReconciliationPage() {
   const {
-    baselines,
-    activeBaselineId,
-    setActiveBaselineId,
-    compareBaselineId,
-    setCompareBaselineId,
-    scope2Methodology,
-    setScope2Methodology,
-    approveBaseline,
-    rejectBaseline,
+    versiA,
+    versiB,
+    setVersiA,
+    setVersiB,
+    tukarVersi,
+    statusVersi,
+    alasanVersi,
+    baselineAktif,
+    aksiPersetujuan,
+    resetSimulasi,
   } = useTeraStore();
 
-  const [note, setNote] = useState("");
-  const [selectedReason, setSelectedReason] = useState("Perubahan cakupan");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [alasan, setAlasan] = useState("");
+  const [umpanBalik, setUmpanBalik] = useState<HasilAksi | null>(null);
+  const [tampilSemua, setTampilSemua] = useState(false);
 
-  const baseA = baselines.find((b) => b.id === activeBaselineId) || baselines[0];
-  const baseB = baselines.find((b) => b.id === compareBaselineId) || baselines[1];
+  const a = cariVersi(versiA);
+  const b = cariVersi(versiB);
+  const beda = a && b ? bandingkanVersi(a, b) : null;
+  const vScope1 = variansScope("Scope 1", versiA, versiB);
+  const vScope2 = variansScope("Scope 2", versiA, versiB);
 
-  const diffTotal = calculateDifference(
-    baseA.totalEmissionsTco2e,
-    baseB.totalEmissionsTco2e
-  );
+  const statusB = statusVersi[versiB];
+  const aksi = statusB ? aksiTersedia(statusB) : [];
 
-  const diffScope1 = calculateDifference(baseA.scope1Tco2e, baseB.scope1Tco2e);
-  const diffScope2 = calculateDifference(baseA.scope2Tco2e, baseB.scope2Tco2e);
+  const baris = useMemo(() => (tampilSemua ? [...REVISI, ...TIDAK_DIREVISI] : REVISI), [tampilSemua]);
+  const jenis = hitungJenisCatatan(REVISI);
 
-  const isThresholdTriggered = isVarianceThresholdExceeded(diffTotal.percentage);
-
-  const handleApprove = () => {
-    if (!note || note.trim().length === 0) {
-      setErrorMsg("Reviewer Note wajib diisi sebelum meratifikasi baseline baru (PRD Section 4.3).");
-      return;
-    }
-
-    approveBaseline(baseB.id, `${selectedReason}: ${note}`);
-    setSuccessMsg(`Baseline ${baseB.id} berhasil diratifikasi dan ditetapkan sebagai Locked Active Footprint.`);
-    setNote("");
-    setErrorMsg("");
+  const jalankan = (x: AksiSimulasi) => {
+    const hasil = aksiPersetujuan(versiB, x, alasan);
+    setUmpanBalik(hasil);
+    if (hasil.ok) setAlasan("");
   };
 
-  const handleReject = () => {
-    if (!note || note.trim().length === 0) {
-      setErrorMsg("Reviewer Note wajib diisi untuk alasan penolakan baseline.");
-      return;
-    }
-
-    rejectBaseline(baseB.id, `${selectedReason}: ${note}`);
-    setSuccessMsg(`Pengajuan baseline ${baseB.id} ditolak dan dikembalikan untuk revisi.`);
-    setNote("");
-    setErrorMsg("");
-  };
+  const kartuVarians = (label: string, v: ReturnType<typeof variansScope>) =>
+    v ? (
+      <KpiCard
+        label={label}
+        value={fmtBertanda(v.beda.absolute)}
+        unit="tCO2e"
+        delta={{ value: fmtPersen(v.beda.percentage), isPositiveGood: false, label: "terhadap A" }}
+        subtitle={`${fmtAngka(v.a.nilai)} → ${fmtAngka(v.b.nilai)} tCO2e`}
+        footnote={`Sumber: ${v.a.sumber} → ${v.b.sumber}`}
+      />
+    ) : (
+      <KpiCard label={label} value={KOSONG} unit="tCO2e" />
+    );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
       <PageHeader
-        badge="GOVERNANCE & RECONCILIATION"
-        title="Baseline Reconciliation Engine"
-        description="Side-by-side comparison between Active Baseline and Proposed Baseline Revision, ISO 14064-1 variance quantification, and audit sign-off workflow."
-        actions={
-          <div className="flex items-center gap-3">
-            {/* Scope 2 Methodology Switch */}
-            <div className="flex items-center bg-[#e5eeff] p-1 rounded-lg border border-[#dce9ff]">
-              <button
-                type="button"
-                onClick={() => setScope2Methodology("location")}
-                className={`px-3 py-1.5 rounded-md text-[12px] font-bold transition-all ${
-                  scope2Methodology === "location"
-                    ? "bg-[#0b1c30] text-white shadow-sm"
-                    : "text-[#5c5e64] hover:text-[#0b1c30]"
-                }`}
-              >
-                Location-based
-              </button>
-              <button
-                type="button"
-                onClick={() => setScope2Methodology("market")}
-                className={`px-3 py-1.5 rounded-md text-[12px] font-bold transition-all ${
-                  scope2Methodology === "market"
-                    ? "bg-[#0b1c30] text-white shadow-sm"
-                    : "text-[#5c5e64] hover:text-[#0b1c30]"
-                }`}
-              >
-                Market-based (REC)
-              </button>
-            </div>
-          </div>
-        }
+        badge="BASELINE RECONCILIATION"
+        title="Versi baseline Scope 1+2 tahun 2023"
+        description="Tiga laporan menuliskan angka berbeda untuk baseline yang sama. Semua versi tetap terlihat, termasuk yang tidak aktif."
       />
 
       {/* Baseline Version Selection Card */}
@@ -116,196 +93,164 @@ export default function ReconciliationPage() {
             {/* Baseline A */}
             <div className="bg-[#eff4ff] p-3.5 rounded-lg border border-[#dce9ff]">
               <div className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider mb-1">
-                Baseline A (Reference Baseline)
+                Baseline A (pembanding)
               </div>
               <select
-                value={activeBaselineId}
-                onChange={(e) => setActiveBaselineId(e.target.value)}
+                aria-label="Baseline A"
+                value={versiA}
+                onChange={(e) => setVersiA(e.target.value)}
                 className="w-full bg-white border border-[#dce9ff] rounded px-3 py-1.5 text-[13px] font-bold text-[#0b1c30] focus:outline-none"
               >
-                {baselines.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.id} ({b.totalEmissionsTco2e} tCO₂e) - {b.status.toUpperCase()}
+                {VERSI.map((v) => (
+                  <option key={v.versi} value={v.versi}>
+                    {v.versi} ({fmtAngka(v.nilai)} tCO2e) - {LABEL_STATUS[statusVersi[v.versi]].toUpperCase()}
                   </option>
                 ))}
               </select>
-              <div className="text-[11px] text-[#5c5e64] mt-1.5">
-                {baseA.sourceRef || "Locked audited footprint"}
-              </div>
+              <div className="text-[11px] text-[#5c5e64] mt-1.5">Sumber: {a?.sumber ?? KOSONG}</div>
             </div>
 
             {/* Baseline B */}
             <div className="bg-[#eff4ff] p-3.5 rounded-lg border border-[#dce9ff]">
               <div className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider mb-1">
-                Baseline B (Proposed Target Revision)
+                Baseline B (dibandingkan)
               </div>
               <select
-                value={compareBaselineId}
-                onChange={(e) => setCompareBaselineId(e.target.value)}
+                aria-label="Baseline B"
+                value={versiB}
+                onChange={(e) => setVersiB(e.target.value)}
                 className="w-full bg-white border border-[#dce9ff] rounded px-3 py-1.5 text-[13px] font-bold text-[#0b1c30] focus:outline-none"
               >
-                {baselines.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.id} ({b.totalEmissionsTco2e} tCO₂e) - {b.status.toUpperCase()}
+                {VERSI.map((v) => (
+                  <option key={v.versi} value={v.versi}>
+                    {v.versi} ({fmtAngka(v.nilai)} tCO2e) - {LABEL_STATUS[statusVersi[v.versi]].toUpperCase()}
                   </option>
                 ))}
               </select>
-              <div className="text-[11px] text-[#5c5e64] mt-1.5">
-                {baseB.sourceRef || "Under reconciliation review"}
-              </div>
+              <div className="text-[11px] text-[#5c5e64] mt-1.5">Sumber: {b?.sumber ?? KOSONG}</div>
             </div>
           </div>
-        </div>
 
-        {/* Threshold Variance Callout */}
-        {isThresholdTriggered && (
-          <div className="p-4 bg-[#fff1f2] border border-[#ffdad6] rounded-xl flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#b80035] shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <div className="text-[13px] font-bold text-[#93000a]">
-                Board Governance Variance Threshold Triggered (&gt; 5.00%)
-              </div>
-              <div className="text-[12px] text-[#93000a]/90 leading-relaxed">
-                Total variance between {baseA.id} and {baseB.id} is{" "}
-                <span className="font-bold">+{diffTotal.absolute.toFixed(1)} tCO₂e (+{diffTotal.percentage?.toFixed(2)}%)</span>.
-                Under PRD Section 4.3 and Telkomsel ESG By-Laws, any baseline variance exceeding 5.0% mandates formal justification, documentation of changes (boundary expansion / emission factor adjustments), and board sign-off before ratification.
-              </div>
-            </div>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={tukarVersi}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm shrink-0"
+          >
+            <ArrowLeftRight className="w-4 h-4 text-[#5c5e64]" />
+            <span>Tukar A ↔ B</span>
+          </button>
+        </div>
       </div>
 
       {/* Variance KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {kartuVarians("Selisih Scope 1 (B − A)", vScope1)}
+        {kartuVarians("Selisih Scope 2 (B − A)", vScope2)}
         <KpiCard
-          label="Scope 1 Variance"
-          value={`${diffScope1.absolute >= 0 ? "+" : ""}${diffScope1.absolute.toFixed(1)}`}
-          unit="tCO₂e"
-          delta={{
-            value: `${diffScope1.percentage && diffScope1.percentage >= 0 ? "+" : ""}${diffScope1.percentage?.toFixed(1)}%`,
-            isPositiveGood: false,
-            label: "vs base",
-          }}
-          subtitle={`${baseA.scope1Tco2e} → ${baseB.scope1Tco2e} tCO₂e`}
-        />
-        <KpiCard
-          label="Scope 2 Variance"
-          value={`${diffScope2.absolute >= 0 ? "+" : ""}${diffScope2.absolute.toFixed(1)}`}
-          unit="tCO₂e"
-          delta={{
-            value: `${diffScope2.percentage && diffScope2.percentage >= 0 ? "+" : ""}${diffScope2.percentage?.toFixed(1)}%`,
-            isPositiveGood: false,
-            label: "vs base",
-          }}
-          subtitle={`${baseA.scope2Tco2e} → ${baseB.scope2Tco2e} tCO₂e`}
-        />
-        <KpiCard
-          label="Net Emissions Delta"
-          value={`${diffTotal.absolute >= 0 ? "+" : ""}${diffTotal.absolute.toFixed(1)}`}
-          unit="tCO₂e"
-          delta={{
-            value: `${diffTotal.percentage && diffTotal.percentage >= 0 ? "+" : ""}${diffTotal.percentage?.toFixed(2)}%`,
-            isPositiveGood: false,
-            label: "Total Net Change",
-          }}
-          subtitle="Mandatory Board Threshold > 5.0%"
+          label="Selisih Scope 1+2 (B − A)"
+          value={beda ? fmtBertanda(beda.absolute) : KOSONG}
+          unit="tCO2e"
+          delta={beda ? { value: fmtPersen(beda.percentage), isPositiveGood: false, label: "terhadap A" } : undefined}
+          subtitle={a && b ? `${fmtAngka(a.nilai)} → ${fmtAngka(b.nilai)} tCO2e` : undefined}
+          footnote={a && b ? `Sumber: ${a.sumber} → ${b.sumber}` : undefined}
         />
       </div>
 
-      {/* Line Item Comparison Table */}
+      {/* Cross-report Revision Table */}
       <div className="bg-white rounded-xl border border-[#e5eeff] shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-[#e5eeff] flex items-center justify-between">
+        <div className="p-4 border-b border-[#e5eeff] flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-[14px] font-bold text-[#0b1c30]">
-              Line-Item Reconciliation Ledger
-            </h3>
+            <h3 className="text-[14px] font-bold text-[#0b1c30]">Revisi lintas laporan</h3>
             <p className="text-[12px] text-[#5c5e64]">
-              Granular breakdown of emission factors, activity adjustments, and boundary changes
+              {REVISI.length} revisi: {jenis.umum} catatan umum, {jenis.tidakAda} tanpa catatan, {jenis.spesifik} catatan
+              spesifik.
             </p>
           </div>
-          <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-full">
-            {baseA.items.length} Tracked Line Items
-          </span>
+          <div className="flex items-center gap-1 bg-[#eff4ff] p-1 rounded-full text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setTampilSemua(false)}
+              className={`px-2.5 py-1 rounded-full transition-colors ${
+                !tampilSemua ? "bg-white text-[#0b1c30] shadow-sm" : "text-[#5c5e64] hover:text-[#0b1c30]"
+              }`}
+            >
+              Hanya revisi ({REVISI.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTampilSemua(true)}
+              className={`px-2.5 py-1 rounded-full transition-colors ${
+                tampilSemua ? "bg-white text-[#0b1c30] shadow-sm" : "text-[#5c5e64] hover:text-[#0b1c30]"
+              }`}
+            >
+              Semua ({REVISI.length + TIDAK_DIREVISI.length})
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Emission Source</th>
-                <th className="py-3 px-4">Scope</th>
-                <th className="py-3 px-4">{baseA.id} (Base)</th>
-                <th className="py-3 px-4">{baseB.id} (Target)</th>
-                <th className="py-3 px-4 text-right">Δ Absolute</th>
-                <th className="py-3 px-4 text-right">% Variance</th>
-                <th className="py-3 px-4">Reason Category</th>
-                <th className="py-3 px-4">Evidence</th>
+                <th className="py-3 px-4">Metrik</th>
+                <th className="py-3 px-4">Nilai lama</th>
+                <th className="py-3 px-4">Nilai baru</th>
+                <th className="py-3 px-4 text-right">% Selisih</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Catatan laporan</th>
+                <th className="py-3 px-4">Kode alasan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
-              {baseA.items.map((item) => (
-                <tr key={item.id} className="hover:bg-[#f8f9ff] transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-[#0b1c30]">{item.name}</div>
-                    <div className="text-[11px] text-[#5c5e64]">{item.description}</div>
+              {baris.map((r) => (
+                <tr key={r.kunci} className="hover:bg-[#f8f9ff] transition-colors align-top">
+                  <td className="py-3.5 px-4 min-w-[150px]">
+                    <div className="font-bold text-[#0b1c30]">{r.metrik}</div>
+                  </td>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className="font-semibold text-[#0b1c30]">{fmtAngka(r.nilaiLama, 3)}</div>
+                    <div className="text-[11px] text-[#5c5e64]">{r.sumberLama}</div>
+                  </td>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className="font-semibold text-[#0b1c30]">{fmtAngka(r.nilaiBaru, 3)}</div>
+                    <div className="text-[11px] text-[#5c5e64]">{r.sumberBaru}</div>
+                  </td>
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <span
+                      className={`font-bold text-[12px] px-2 py-0.5 rounded ${
+                        r.status === "Revisi" ? "bg-[#fff1f2] text-[#b80035]" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {fmtPersen(r.persen)}
+                    </span>
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
-                      {item.scope}
+                      {r.status}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-[#0b1c30]">
-                      {item.vA_emissions} tCO₂e
-                    </div>
-                    <div className="text-[11px] text-[#5c5e64]">
-                      {item.vA_activity} • {item.vA_ef}
-                    </div>
+                    {r.catatanJenis ? (
+                      <Tooltip
+                        clickToggle
+                        strategy="fixed"
+                        label={`${r.catatanJenis}: tampilkan catatan`}
+                        content={
+                          <span className="block space-y-1.5">
+                            <span className="block">{r.catatanLaporan ?? KOSONG}</span>
+                            {r.catatanAnalis && <span className="block text-[#c4c6cd]">Catatan analis: {r.catatanAnalis}</span>}
+                          </span>
+                        }
+                      >
+                        <span className="text-[12px] font-medium text-[#0b1c30] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff] hover:bg-[#e5eeff] cursor-pointer whitespace-nowrap">
+                          {r.catatanJenis}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-[#5c5e64]">{KOSONG}</span>
+                    )}
                   </td>
-                  <td className="py-3.5 px-4">
-                    <div className="font-semibold text-[#0b1c30]">
-                      {item.vB_emissions} tCO₂e
-                    </div>
-                    <div className="text-[11px] text-[#5c5e64]">
-                      {item.vB_activity} • {item.vB_ef}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <span
-                      className={`font-bold ${
-                        item.diffEmissions > 0
-                          ? "text-[#b80035]"
-                          : item.diffEmissions < 0
-                          ? "text-[#00675e]"
-                          : "text-[#5c5e64]"
-                      }`}
-                    >
-                      {item.diffEmissions > 0 ? "+" : ""}
-                      {item.diffEmissions.toFixed(1)} t
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <span
-                      className={`font-bold text-[12px] px-2 py-0.5 rounded ${
-                        item.diffPercent > 5
-                          ? "bg-[#fff1f2] text-[#b80035]"
-                          : item.diffPercent > 0
-                          ? "bg-[#eff4ff] text-[#0b1c30]"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {item.diffPercent > 0 ? "+" : ""}
-                      {item.diffPercent.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="text-[12px] font-medium text-[#0b1c30] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff]">
-                      {item.category}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-[11px] text-[#5c5e64] max-w-xs truncate">
-                    {item.evidence}
-                  </td>
+                  <td className="py-3.5 px-4 text-[12px] font-semibold text-[#0b1c30]">{r.kodeAlasan}</td>
                 </tr>
               ))}
             </tbody>
@@ -313,82 +258,149 @@ export default function ReconciliationPage() {
         </div>
       </div>
 
-      {/* Formal Ratification & Sign-off Box */}
+      {/* Approval (simulation) Box */}
       <div className="bg-white rounded-xl border border-[#e5eeff] p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[#e5eeff]">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#e5eeff]">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-[#b80035]" />
-            <h3 className="text-[16px] font-bold text-[#0b1c30]">
-              Formal Baseline Ratification & Board Sign-off
-            </h3>
+            <h3 className="text-[16px] font-bold text-[#0b1c30]">Persetujuan (simulasi)</h3>
           </div>
-          <span className="text-[11px] font-semibold text-[#5c5e64]">
-            Action permanently appends to immutable Audit Trail
-          </span>
         </div>
 
-        {errorMsg && (
-          <div className="p-3 bg-[#fff1f2] border border-[#ffdad6] rounded-lg text-[13px] text-[#93000a] flex items-center gap-2">
+        {umpanBalik && !umpanBalik.ok && (
+          <div role="status" className="p-3 bg-[#fff1f2] border border-[#ffdad6] rounded-lg text-[13px] text-[#93000a] flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 text-[#b80035]" />
-            <span>{errorMsg}</span>
+            <span>{umpanBalik.pesan}</span>
           </div>
         )}
-        {successMsg && (
-          <div className="p-3 bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg text-[13px] text-[#065f46] flex items-center gap-2">
+        {umpanBalik && umpanBalik.ok && (
+          <div role="status" className="p-3 bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg text-[13px] text-[#065f46] flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-[#059669]" />
-            <span>{successMsg}</span>
+            <span>{umpanBalik.pesan}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-[12px] font-semibold text-[#0b1c30] block mb-1">
-              Primary Reason Category *
-            </label>
-            <select
-              value={selectedReason}
-              onChange={(e) => setSelectedReason(e.target.value)}
-              className="w-full bg-[#f8f9ff] border border-[#dce9ff] rounded-lg p-2.5 text-[13px] text-[#0b1c30] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20"
-            >
-              <option value="Perubahan cakupan">Perubahan cakupan (Boundary Expansion)</option>
-              <option value="Perubahan faktor emisi & aktivitas">Perubahan faktor emisi & aktivitas</option>
-              <option value="Koreksi data aktivitas">Koreksi data aktivitas (Telemetry revision)</option>
-              <option value="Perubahan metodologi akuntansi">Perubahan metodologi akuntansi</option>
-            </select>
+            <div className="text-[12px] font-semibold text-[#0b1c30] block mb-1">Kode alasan</div>
+            <div className="w-full bg-[#f8f9ff] border border-[#dce9ff] rounded-lg p-2.5 text-[13px] text-[#0b1c30]">
+              Unresolved (tetap)
+            </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-[12px] font-semibold text-[#0b1c30] block mb-1">
-              Executive Reviewer Note * (Required for Ratification)
+            <label htmlFor="alasan-perubahan" className="text-[12px] font-semibold text-[#0b1c30] block mb-1">
+              Alasan perubahan * (wajib)
             </label>
             <input
+              id="alasan-perubahan"
               type="text"
-              value={note}
-              onChange={(e) => {
-                setNote(e.target.value);
-                if (errorMsg) setErrorMsg("");
-              }}
-              placeholder="e.g., Board ratified addition of 42 BTS towers and updated MEMR 2024 grid factor."
-              className="w-full bg-[#f8f9ff] border border-[#dce9ff] rounded-lg p-2.5 text-[13px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20"
+              value={alasan}
+              disabled={aksi.length === 0}
+              onChange={(e) => setAlasan(e.target.value)}
+              placeholder="Tulis alasan perubahan untuk versi B"
+              className="w-full bg-[#f8f9ff] border border-[#dce9ff] rounded-lg p-2.5 text-[13px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 disabled:opacity-60"
             />
           </div>
         </div>
 
-        <div className="pt-2 flex items-center justify-end gap-3">
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
-            onClick={handleReject}
-            className="px-5 py-2.5 rounded-lg bg-[#fff1f2] border border-[#ffdad6] text-[#b80035] hover:bg-[#ffe4e6] font-semibold text-[13px] transition-colors"
+            onClick={() => {
+              resetSimulasi();
+              setAlasan("");
+              setUmpanBalik({ ok: true, pesan: "Simulasi direset. Semua versi kembali ke Draft; baseline aktif: belum ada." });
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e5eeff] hover:bg-[#dce9ff] text-[#0b1c30] font-semibold text-[13px] transition-colors"
           >
-            Reject Baseline Revision
+            <RotateCcw className="w-4 h-4" />
+            Reset simulasi
           </button>
-          <button
-            type="button"
-            onClick={handleApprove}
-            className="px-6 py-2.5 rounded-lg bg-[#b80035] hover:bg-[#9f002d] text-white font-semibold text-[13px] shadow transition-colors"
-          >
-            Approve & Ratify Baseline ({baseB.id})
-          </button>
+
+          <div className="flex items-center gap-3">
+            {aksi.length === 0 && (
+              <span className="text-[12px] text-[#5c5e64]">
+                Versi B sudah {LABEL_STATUS[statusB]}. Pilih versi lain atau reset simulasi.
+              </span>
+            )}
+            {aksi.includes("tolak") && (
+              <button
+                type="button"
+                onClick={() => jalankan("tolak")}
+                className="px-5 py-2.5 rounded-lg bg-[#fff1f2] border border-[#ffdad6] text-[#b80035] hover:bg-[#ffe4e6] font-semibold text-[13px] transition-colors"
+              >
+                {LABEL_AKSI.tolak}
+              </button>
+            )}
+            {aksi.includes("ajukan") && (
+              <button
+                type="button"
+                onClick={() => jalankan("ajukan")}
+                className="px-6 py-2.5 rounded-lg bg-[#b80035] hover:bg-[#9f002d] text-white font-semibold text-[13px] shadow transition-colors"
+              >
+                {LABEL_AKSI.ajukan} ({versiB})
+              </button>
+            )}
+            {aksi.includes("setujui") && (
+              <button
+                type="button"
+                onClick={() => jalankan("setujui")}
+                className="px-6 py-2.5 rounded-lg bg-[#b80035] hover:bg-[#9f002d] text-white font-semibold text-[13px] shadow transition-colors"
+              >
+                {LABEL_AKSI.setujui} ({versiB})
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* All versions stay visible */}
+        <div className="overflow-x-auto rounded-lg border border-[#e5eeff]">
+          <table className="w-full text-left border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
+                <th className="py-3 px-4">Versi</th>
+                <th className="py-3 px-4">Scope 1+2 2023</th>
+                <th className="py-3 px-4">Vs versi sebelumnya</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Alasan perubahan</th>
+                <th className="py-3 px-4">Kode alasan</th>
+                <th className="py-3 px-4">Baseline aktif</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f5f9]">
+              {VERSI.map((v) => {
+                const st = statusVersi[v.versi];
+                return (
+                  <tr key={v.versi} className={`transition-colors align-top ${baselineAktif === v.versi ? "bg-[#ecfdf5]" : "hover:bg-[#f8f9ff]"}`}>
+                    <td className="py-3.5 px-4 font-bold text-[#0b1c30]">{v.versi}</td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="font-semibold text-[#0b1c30]">{fmtAngka(v.nilai)} tCO2e</div>
+                      <div className="text-[11px] text-[#5c5e64]">{v.sumber}</div>
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {v.selisih_absolut_vs_sebelumnya != null ? (
+                        <span className="font-semibold text-[#0b1c30]">
+                          {fmtBertanda(v.selisih_absolut_vs_sebelumnya)} ({fmtPersen(v.selisih_pct_vs_sebelumnya)})
+                        </span>
+                      ) : (
+                        KOSONG
+                      )}
+                      {v.catatan_laporan && <div className="text-[11px] text-[#5c5e64] mt-1 whitespace-normal max-w-xs">{v.catatan_laporan}</div>}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <StatusBadge status={st} label={LABEL_STATUS[st]} size="sm" showIcon={st !== "draft"} />
+                    </td>
+                    <td className="py-3.5 px-4 text-[12px] text-[#0b1c30]">{alasanVersi[v.versi] ?? KOSONG}</td>
+                    <td className="py-3.5 px-4 text-[12px] font-semibold text-[#0b1c30]">{v.kode_alasan ?? KOSONG}</td>
+                    <td className="py-3.5 px-4 text-[12px] text-[#0b1c30]">
+                      {baselineAktif === v.versi ? "Ya (simulasi)" : "Tidak"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

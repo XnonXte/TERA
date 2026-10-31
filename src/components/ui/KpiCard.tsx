@@ -1,5 +1,6 @@
 import React from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface KpiCardProps {
   label: string;
@@ -17,6 +18,10 @@ interface KpiCardProps {
     variant?: "default" | "red" | "green" | "amber" | "blue";
   };
   icon?: React.ReactNode;
+  /** Teks tambahan (mis. sumber) di bawah baris subjudul; boleh lebih dari satu baris. */
+  footnote?: React.ReactNode;
+  /** Keterangan tambahan di tooltip ikon ⓘ di samping label. */
+  info?: React.ReactNode;
   onClick?: () => void;
   className?: string;
 }
@@ -29,6 +34,8 @@ export default function KpiCard({
   subtitle,
   badge,
   icon,
+  footnote,
+  info,
   onClick,
   className = "",
 }: KpiCardProps) {
@@ -65,8 +72,15 @@ export default function KpiCard({
       } ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider truncate">
-          {label}
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider truncate">
+            {label}
+          </span>
+          {info && (
+            <Tooltip content={info} align="left" label={`Keterangan ${label}`}>
+              <Info className="w-3.5 h-3.5 text-[#5c5e64] hover:text-[#0b1c30]" />
+            </Tooltip>
+          )}
         </span>
         {icon && (
           <div className="w-8 h-8 rounded-lg bg-[#f8f9ff] border border-[#e5eeff] flex items-center justify-center text-[#5c5e64]">
@@ -119,6 +133,8 @@ export default function KpiCard({
           )}
         </div>
       )}
+
+      {footnote && <div className="text-[11px] text-[#5c5e64] mt-2 leading-snug">{footnote}</div>}
     </div>
   );
 }

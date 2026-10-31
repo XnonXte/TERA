@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, AlertTriangle, AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 
 export type BadgeVariant =
   | "valid"
@@ -9,10 +9,6 @@ export type BadgeVariant =
   | "approved"
   | "pending"
   | "rejected"
-  | "reviewed"
-  | "resolved"
-  | "verified"
-  | "estimated"
   | "unresolved";
 
 interface StatusBadgeProps {
@@ -34,22 +30,19 @@ export default function StatusBadge({
   let icon = null;
   let text = label || status;
 
-  if (norm === "valid" || norm === "approved" || norm === "resolved" || norm === "verified") {
+  if (norm === "valid" || norm === "approved") {
     bg = "bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]";
     icon = <CheckCircle2 className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />;
     if (!label) {
       if (norm === "valid") text = "Valid";
       else if (norm === "approved") text = "Approved";
-      else if (norm === "resolved") text = "Resolved";
-      else if (norm === "verified") text = "Verified";
     }
-  } else if (norm === "warning" || norm === "pending" || norm === "pending_review" || norm === "estimated") {
+  } else if (norm === "warning" || norm === "pending" || norm === "pending_review") {
     bg = "bg-[#fffbeb] text-[#d97706] border-[#fde68a]";
     icon = <Clock className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />;
     if (!label) {
       if (norm === "warning") text = "Warning";
       else if (norm === "pending_review" || norm === "pending") text = "Under Review";
-      else if (norm === "estimated") text = "Estimated";
     }
   } else if (norm === "error" || norm === "critical" || norm === "rejected" || norm === "unresolved") {
     bg = "bg-[#fff1f2] text-[#b80035] border-[#ffdad6]";
@@ -59,10 +52,6 @@ export default function StatusBadge({
       else if (norm === "rejected") text = "Rejected";
       else if (norm === "unresolved") text = "Unresolved";
     }
-  } else if (norm === "reviewed") {
-    bg = "bg-[#e5eeff] text-[#0b1c30] border-[#dce9ff]";
-    icon = <ShieldCheck className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />;
-    if (!label) text = "Reviewed";
   }
 
   return (

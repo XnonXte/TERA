@@ -50,3 +50,6 @@ Thumbs.db
 *.swp
 *.swo
 *.bak
+
+# Claude Code (pengaturan lokal)
+.claude/settings.local.json
