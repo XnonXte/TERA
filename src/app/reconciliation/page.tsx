@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
+import Tooltip from "@/components/ui/Tooltip";
 import KpiCard from "@/components/ui/KpiCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore, HasilAksi } from "@/stores/useTeraStore";
@@ -228,17 +229,26 @@ export default function ReconciliationPage() {
                       {r.status}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 min-w-[280px] max-w-md">
-                    {r.catatanJenis && (
-                      <span className="text-[12px] font-medium text-[#0b1c30] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff]">
-                        {r.catatanJenis}
-                      </span>
+                  <td className="py-3.5 px-4">
+                    {r.catatanJenis ? (
+                      <Tooltip
+                        clickToggle
+                        strategy="fixed"
+                        label={`${r.catatanJenis}: tampilkan catatan`}
+                        content={
+                          <span className="block space-y-1.5">
+                            <span className="block">{r.catatanLaporan ?? KOSONG}</span>
+                            {r.catatanAnalis && <span className="block text-[#c4c6cd]">Catatan analis: {r.catatanAnalis}</span>}
+                          </span>
+                        }
+                      >
+                        <span className="text-[12px] font-medium text-[#0b1c30] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff] hover:bg-[#e5eeff] cursor-pointer whitespace-nowrap">
+                          {r.catatanJenis}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-[#5c5e64]">{KOSONG}</span>
                     )}
-                    {r.catatanLaporan && <div className="text-[11px] text-[#5c5e64] mt-1.5">{r.catatanLaporan}</div>}
-                    {r.catatanAnalis && (
-                      <div className="text-[11px] text-[#5c5e64] mt-1">Catatan analis: {r.catatanAnalis}</div>
-                    )}
-                    {!r.catatanJenis && !r.catatanLaporan && <span className="text-[#5c5e64]">{KOSONG}</span>}
                   </td>
                   <td className="py-3.5 px-4 text-[12px] font-semibold text-[#0b1c30]">{r.kodeAlasan}</td>
                 </tr>

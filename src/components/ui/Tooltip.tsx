@@ -14,6 +14,8 @@ interface TooltipProps {
   width?: string;
   label?: string;
   triggerClassName?: string;
+  /** "fixed": posisi dihitung dari tombol, agar tidak terpotong wadah yang overflow (mis. tabel). */
+  strategy?: "absolute" | "fixed";
 }
 
 // Tooltip ringan: muncul saat hover, fokus keyboard, atau (opsional) klik. Esc menutup.
@@ -26,13 +28,33 @@ export default function Tooltip({
   width = "w-72",
   label,
   triggerClassName = "",
+  strategy = "absolute",
 }: TooltipProps) {
   const id = useId();
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
   const [pinned, setPinned] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [fixedPos, setFixedPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
   const open = hover || focus || pinned;
+
+  useEffect(() => {
+    if (!open || strategy !== "fixed") return;
+    const place = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const up = r.bottom + 220 > window.innerHeight;
+      setFixedPos({ top: up ? r.top - 8 : r.bottom + 8, left: Math.min(r.left, window.innerWidth - 300), up });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, strategy]);
 
   useEffect(() => {
     if (!pinned) return;
@@ -55,6 +77,7 @@ export default function Tooltip({
       onMouseLeave={() => setHover(false)}
     >
       <button
+        ref={btnRef}
         type="button"
         aria-describedby={open ? id : undefined}
         aria-label={label}
@@ -76,7 +99,17 @@ export default function Tooltip({
       >
         {children}
       </button>
-      {open && (
+      {open && strategy === "fixed" && fixedPos && (
+        <span
+          id={id}
+          role="tooltip"
+          style={{ top: fixedPos.top, left: fixedPos.left, transform: fixedPos.up ? "translateY(-100%)" : undefined }}
+          className={`fixed z-50 ${width} bg-[#0b1c30] text-white text-[12px] leading-relaxed font-normal normal-case tracking-normal text-left p-3 rounded-lg shadow-xl whitespace-normal`}
+        >
+          {content}
+        </span>
+      )}
+      {open && strategy === "absolute" && (
         <span
           id={id}
           role="tooltip"
