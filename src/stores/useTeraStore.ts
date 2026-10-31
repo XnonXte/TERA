@@ -1,8 +1,15 @@
 import { create } from "zustand";
-import { BaselineVersion } from "@/types/tera";
-import { INITIAL_BASELINES } from "@/lib/seedData";
 import { SEED } from "@/lib/seed";
 import { jalankanAturan, HasilCek, RingkasanAturan } from "@/lib/rules";
+import {
+  VERSI,
+  StatusSimulasi,
+  AksiSimulasi,
+  transisiStatus,
+  alasanValid,
+  statusAwal,
+  LABEL_STATUS,
+} from "@/lib/reconciliation";
 
 interface HasilJalan {
   hasil: HasilCek[];
@@ -10,53 +17,53 @@ interface HasilJalan {
   waktu: string; // ISO, waktu eksekusi di browser
 }
 
+export interface HasilAksi {
+  ok: boolean;
+  pesan: string;
+}
+
 interface TeraState {
   activePeriod: string;
-  activeBaselineId: string;
-  compareBaselineId: string;
-  scope2Methodology: "location" | "market";
 
   // Data Quality Center
   hasilAturan: HasilJalan | null;
   cekTerpilih: number | null;
   isDrawerOpen: boolean;
 
-  // Baseline Reconciliation State
-  baselines: BaselineVersion[];
-  reconciliationReviewerNote: string;
-  selectedReasonCategory: string;
+  // Baseline Reconciliation (persetujuan disimulasikan di browser)
+  versiA: string;
+  versiB: string;
+  statusVersi: Record<string, StatusSimulasi>;
+  alasanVersi: Record<string, string>;
+  baselineAktif: string | null;
 
   setActivePeriod: (period: string) => void;
-  setScope2Methodology: (m: "location" | "market") => void;
 
   jalankanAturanDQ: () => void;
   bukaCek: (no: number) => void;
   closeDrawer: () => void;
 
-  setActiveBaselineId: (id: string) => void;
-  setCompareBaselineId: (id: string) => void;
-  setReconciliationReviewerNote: (note: string) => void;
-  setSelectedReasonCategory: (cat: string) => void;
-  approveBaseline: (versionId: string, reviewerNote: string) => void;
-  rejectBaseline: (versionId: string, reviewerNote: string) => void;
+  setVersiA: (v: string) => void;
+  setVersiB: (v: string) => void;
+  tukarVersi: () => void;
+  aksiPersetujuan: (versi: string, aksi: AksiSimulasi, alasan: string) => HasilAksi;
+  resetSimulasi: () => void;
 }
 
 export const useTeraStore = create<TeraState>((set, get) => ({
   activePeriod: "FY 2025",
-  activeBaselineId: "v2024.1",
-  compareBaselineId: "v2025.0-Draft",
-  scope2Methodology: "location",
 
   hasilAturan: null,
   cekTerpilih: null,
   isDrawerOpen: false,
 
-  baselines: INITIAL_BASELINES,
-  reconciliationReviewerNote: "",
-  selectedReasonCategory: "Perubahan cakupan",
+  versiA: VERSI[0].versi,
+  versiB: VERSI[1].versi,
+  statusVersi: statusAwal(),
+  alasanVersi: {},
+  baselineAktif: null,
 
   setActivePeriod: (period) => set({ activePeriod: period }),
-  setScope2Methodology: (m) => set({ scope2Methodology: m }),
 
   // Menjalankan aturan α dan β di sisi klien terhadap 32 pemeriksaan dari seed.
   jalankanAturanDQ: () => {
@@ -66,30 +73,34 @@ export const useTeraStore = create<TeraState>((set, get) => ({
   bukaCek: (no) => set({ cekTerpilih: no, isDrawerOpen: true }),
   closeDrawer: () => set({ isDrawerOpen: false }),
 
-  setActiveBaselineId: (id) => set({ activeBaselineId: id }),
-  setCompareBaselineId: (id) => set({ compareBaselineId: id }),
-  setReconciliationReviewerNote: (note) => set({ reconciliationReviewerNote: note }),
-  setSelectedReasonCategory: (cat) => set({ selectedReasonCategory: cat }),
+  setVersiA: (v) => set({ versiA: v }),
+  setVersiB: (v) => set({ versiB: v }),
+  tukarVersi: () => set((s) => ({ versiA: s.versiB, versiB: s.versiA })),
 
-  approveBaseline: (versionId, reviewerNote) => {
-    const { baselines } = get();
-    if (!baselines.some((b) => b.id === versionId)) return;
+  // Status, baseline aktif, dan alasan diperbarui dalam satu alur (PRD 4.5).
+  aksiPersetujuan: (versi, aksi, alasan) => {
+    const { statusVersi, alasanVersi, baselineAktif } = get();
+    const sekarang = statusVersi[versi];
+    if (!sekarang) return { ok: false, pesan: `Versi ${versi} tidak ditemukan.` };
+    if (!alasanValid(alasan)) return { ok: false, pesan: "Alasan perubahan wajib diisi." };
+    const berikut = transisiStatus(sekarang, aksi);
+    if (!berikut) {
+      return { ok: false, pesan: `Aksi tidak berlaku untuk status ${LABEL_STATUS[sekarang]}.` };
+    }
     set({
-      baselines: baselines.map((b) =>
-        b.id === versionId ? { ...b, status: "approved" as const, reviewerNote } : b
-      ),
-      activeBaselineId: versionId,
-      reconciliationReviewerNote: "",
+      statusVersi: { ...statusVersi, [versi]: berikut },
+      alasanVersi: { ...alasanVersi, [versi]: alasan.trim() },
+      // Hanya Approved yang menetapkan baseline aktif; Rejected tidak mengubahnya.
+      baselineAktif: berikut === "approved" ? versi : baselineAktif,
     });
+    const pesan =
+      berikut === "approved"
+        ? `${versi} disetujui (simulasi) dan ditetapkan sebagai baseline aktif (simulasi).`
+        : berikut === "rejected"
+        ? `${versi} ditolak (simulasi). Baseline aktif tidak berubah.`
+        : `${versi} diajukan untuk review.`;
+    return { ok: true, pesan };
   },
 
-  rejectBaseline: (versionId, reviewerNote) => {
-    const { baselines } = get();
-    if (!baselines.some((b) => b.id === versionId)) return;
-    set({
-      baselines: baselines.map((b) =>
-        b.id === versionId ? { ...b, status: "rejected" as const, reviewerNote } : b
-      ),
-    });
-  },
+  resetSimulasi: () => set({ statusVersi: statusAwal(), alasanVersi: {}, baselineAktif: null }),
 }));
