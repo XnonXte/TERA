@@ -105,7 +105,7 @@ function DataQualityContent() {
   const adaFilter = fAturan !== "semua" || fHasil !== "semua" || fLaporan !== "semua" || cari !== "";
 
   const th = (k: KolomUrut, label: string, kanan = false) => (
-    <th className={`py-3 px-4 ${kanan ? "text-right" : ""}`}>
+    <th className={`py-3 px-3 ${kanan ? "text-right" : ""}`}>
       <button
         type="button"
         onClick={() => setUrut((u) => ({ kolom: k, naik: u.kolom === k ? !u.naik : true }))}
@@ -316,7 +316,7 @@ function DataQualityContent() {
                 {th("toleransi", "Toleransi", true)}
                 {th("aturan", "Aturan")}
                 {th("hasil", "Hasil aplikasi")}
-                <th className="py-3 px-4 text-right">Aksi</th>
+                <th className="py-3 px-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -338,30 +338,30 @@ function DataQualityContent() {
                       className="hover:bg-[#f8f9ff] transition-colors cursor-pointer group"
                       onClick={() => bukaCek(c.no)}
                     >
-                      <td className="py-3 px-4 font-bold text-[#0b1c30]">{c.no}</td>
-                      <td className="py-3 px-4 min-w-[220px]">
+                      <td className="py-3 px-3 font-bold text-[#0b1c30]">{c.no}</td>
+                      <td className="py-3 px-3 min-w-[170px]">
                         <div className="font-semibold text-[#0b1c30]">{c.item}</div>
                       </td>
-                      <td className="py-3 px-4 text-[#5c5e64] whitespace-nowrap">
+                      <td className="py-3 px-3 text-[#5c5e64] min-w-[110px]">
                         {sumberLaporan(c.laporan, c.halaman_cetak)}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
                         <div className="font-bold text-[#0b1c30]">{fmtAngka(c.nilai_tertulis)}</div>
                         <div className="text-[11px] text-[#5c5e64]">{u.nilai}</div>
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap text-[#0b1c30]">
+                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#0b1c30]">
                         {h?.hitung != null ? fmtTetap(h.hitung) : KOSONG}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
                         <div className={`font-bold ${jenis === "ditandai" ? "text-[#b80035]" : "text-[#0b1c30]"}`}>
                           {h?.selisih != null ? fmtBertanda(h.selisih) : KOSONG}
                         </div>
                         {h?.selisih != null && <div className="text-[11px] text-[#5c5e64]">{u.selisih}</div>}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap text-[#5c5e64]">
+                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#5c5e64]">
                         {luar ? KOSONG : fmtAngka(c.toleransi_d6)}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         {luar ? (
                           KOSONG
                         ) : (
@@ -370,11 +370,13 @@ function DataQualityContent() {
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={STATUS_BADGE[jenis]} label={TEKS_HASIL[jenis]} size="sm" showIcon={jenis !== "luar"} />
+                      <td className="py-3 px-3 min-w-[150px]">
+                        <div className="max-w-[160px]">
+                          <StatusBadge status={STATUS_BADGE[jenis]} label={TEKS_HASIL[jenis]} size="sm" showIcon={jenis !== "luar"} />
+                        </div>
                         {luar && <div className="text-[11px] text-[#5c5e64] mt-1">Keterangan D6: {c.hasil_d6}</div>}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-3 text-right">
                         <button
                           type="button"
                           onClick={(e) => {

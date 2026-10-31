@@ -79,9 +79,9 @@ export default function CheckDetailDrawer() {
               {fmtAngka(c.nilai_tertulis)} {u.nilai}
             </Atribut>
             <Atribut label="Hitung ulang" tebal>
-              {h?.hitung != null ? `${fmtTetap(h.hitung, 4)} ${u.nilai}` : KOSONG}
+              {h?.hitung != null ? `${fmtTetap(h.hitung)} ${u.nilai}` : KOSONG}
             </Atribut>
-            <Atribut label="Selisih">{h?.selisih != null ? `${fmtBertanda(h.selisih, 4)} ${u.selisih}` : KOSONG}</Atribut>
+            <Atribut label="Selisih">{h?.selisih != null ? `${fmtBertanda(h.selisih)} ${u.selisih}` : KOSONG}</Atribut>
             <Atribut label="Hasil D6">{c.hasil_d6}</Atribut>
           </div>
 
