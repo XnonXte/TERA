@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { ArrowLeftRight, ShieldCheck, AlertTriangle, CheckCircle2, RotateCcw, Info } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import KpiCard from "@/components/ui/KpiCard";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -87,6 +87,12 @@ export default function ReconciliationPage() {
         title="Versi baseline Scope 1+2 tahun 2023"
         description="Tiga laporan menuliskan angka berbeda untuk baseline yang sama. Semua versi tetap terlihat, termasuk yang tidak aktif."
       />
+
+      {/* Simulation notice (callout style from Data Quality) */}
+      <div className="bg-[#fffbeb] border border-[#fef3c7] p-4 rounded-xl flex items-start gap-2.5">
+        <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
+        <div className="text-[13px] text-[#78350f] leading-relaxed">{TEKS_SIMULASI}</div>
+      </div>
 
       {/* Baseline Version Selection Card */}
       <div className="bg-white p-5 rounded-xl border border-[#e5eeff] shadow-sm space-y-4">

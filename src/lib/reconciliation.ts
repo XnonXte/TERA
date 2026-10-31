@@ -73,6 +73,18 @@ const JENIS_CATATAN: Record<string, BarisRevisiTampil["catatanJenis"]> = {
   SPESIFIK: "Catatan spesifik",
 };
 
+/**
+ * Catatan analis untuk tampilan saja (seed tidak diubah): rujukan ke sheet internal disembunyikan,
+ * "Idem." ditulis ulang agar terbaca tanpa konteks berkas D6.
+ */
+export function catatanAnalisTampil(catatan: string | null | undefined): string | null {
+  if (!catatan) return null;
+  const t = catatan.trim();
+  if (/lihat sheet/i.test(t)) return null;
+  if (t === "Idem.") return "Sama dengan baris di atas.";
+  return t;
+}
+
 function keTampil(r: BarisRevisi, kelompok: string): BarisRevisiTampil {
   const revisi = r.status === "REVISI";
   const hlmCatatan = r.hlm_catatan ? ` (hlm ${r.hlm_catatan})` : "";
@@ -87,7 +99,7 @@ function keTampil(r: BarisRevisi, kelompok: string): BarisRevisiTampil {
     status: revisi ? "Revisi" : "Identik",
     catatanJenis: r.kategori_alasan ? JENIS_CATATAN[r.kategori_alasan] ?? null : null,
     catatanLaporan: r.catatan_alasan_ringkas ? `${r.catatan_alasan_ringkas}${hlmCatatan}` : null,
-    catatanAnalis: r.catatan_analis ?? null,
+    catatanAnalis: catatanAnalisTampil(r.catatan_analis),
     // Panduan: kode alasan revisi "Unresolved" untuk semua (0 dari 18 revisi punya alasan spesifik di D6).
     kodeAlasan: revisi ? "Unresolved" : "—",
   };
