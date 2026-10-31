@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Play, ArrowUpDown } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import HasilBadge from "@/components/ui/HasilBadge";
@@ -24,7 +25,8 @@ function Kartu({ label, nilai, ket }: { label: string; nilai: string; ket?: stri
 
 const daftarNo = (xs: number[]) => (xs.length ? xs.map((n) => `#${n}`).join(", ") : KOSONG);
 
-export default function DataQualityPage() {
+function DataQualityContent() {
+  const params = useSearchParams();
   const { hasilAturan, jalankanAturanDQ, bukaCek } = useTeraStore();
   const cek = SEED.cek_32;
 
@@ -39,11 +41,16 @@ export default function DataQualityPage() {
     if (!hasilAturan) jalankanAturanDQ();
   }, [hasilAturan, jalankanAturanDQ]);
 
-  // Tautan langsung, mis. /data-quality?cek=19
+  // Tautan langsung: /data-quality?cek=19 membuka detail; ?q=... dari pencarian header mengisi kolom cari.
+  const paramCek = params.get("cek");
+  const paramQ = params.get("q");
   useEffect(() => {
-    const no = Number(new URLSearchParams(window.location.search).get("cek"));
+    const no = Number(paramCek);
     if (no && cek.some((c) => c.no === no)) bukaCek(no);
-  }, [cek, bukaCek]);
+  }, [paramCek, cek, bukaCek]);
+  useEffect(() => {
+    if (paramQ !== null) setCari(paramQ);
+  }, [paramQ]);
 
   const hasilByNo = useMemo(() => {
     const m = new Map<number, HasilCek>();
@@ -270,5 +277,13 @@ export default function DataQualityPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+export default function DataQualityPage() {
+  return (
+    <Suspense fallback={null}>
+      <DataQualityContent />
+    </Suspense>
   );
 }
