@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   ListChecks,
   ArrowUpDown,
-  Info,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import KpiCard from "@/components/ui/KpiCard";
@@ -20,7 +19,7 @@ import { useTeraStore } from "@/stores/useTeraStore";
 import { SEED, Cek, sumberLaporan, namaLaporan } from "@/lib/seed";
 import { HasilCek } from "@/lib/rules";
 import { INFO_ATURAN, TEKS_HASIL, labelHasil, satuanCek, LabelHasil } from "@/lib/dq";
-import { fmtAngka, fmtTetap, fmtBertanda, fmtWaktu, KOSONG } from "@/lib/format";
+import { fmtAngka, fmtTetap, fmtBertanda, KOSONG } from "@/lib/format";
 
 type KolomUrut = "no" | "item" | "sumber" | "tertulis" | "hitung" | "selisih" | "toleransi" | "aturan" | "hasil";
 
@@ -135,24 +134,6 @@ function DataQualityContent() {
           </button>
         }
       />
-
-      {/* In-sample statement (values computed by the app) */}
-      <div className="bg-[#fffbeb] border border-[#fef3c7] p-4 rounded-xl flex items-start gap-2.5">
-        <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
-        <div className="text-[13px] text-[#78350f] leading-relaxed">
-          {r ? (
-            <>
-              <span className="font-bold">Hasil in-sample.</span> Aturan dan toleransi dirancang dari data yang sama. Dari{" "}
-              {r.gagalD6} pemeriksaan yang gagal pada D6, {r.gagalD6Ditandai} ditandai aplikasi; {r.gagalD6DiLuarCakupan}{" "}
-              lainnya di luar cakupan aturan. {r.falsePositive} dari {r.lolosTercakup} pemeriksaan yang lolos ditandai. Ini
-              bukan bukti kinerja pada data lain.
-            </>
-          ) : (
-            <>Aturan belum dijalankan.</>
-          )}
-          <div className="text-[12px] mt-1">Waktu eksekusi terakhir: {fmtWaktu(hasilAturan?.waktu ?? null)}</div>
-        </div>
-      </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
