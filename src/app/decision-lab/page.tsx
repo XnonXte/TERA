@@ -17,8 +17,8 @@ export default function DecisionLabPage() {
 
       {/* Decision context (posisi panel parameter asli) */}
       <SpecPanel
-        title="Decision context"
-        subtitle="Periode analisis, baseline emisi, target atau constraint"
+        title="Konteks keputusan"
+        subtitle="Periode analisis, baseline emisi, target atau batasan"
         icon={<Sliders className="w-4 h-4 text-[#b80035]" />}
         bodyHeight="h-28"
       />
@@ -33,7 +33,7 @@ export default function DecisionLabPage() {
 
       {/* Cost-effectiveness chart frame */}
       <SpecPanel
-        title="Cost-effectiveness chart"
+        title="Grafik efektivitas biaya"
         subtitle="Biaya per tCO2e yang berpotensi dihindari"
         icon={<BarChart3 className="w-4 h-4 text-[#b80035]" />}
         bodyHeight="h-64"
@@ -42,14 +42,14 @@ export default function DecisionLabPage() {
       {/* Scenario card grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-[16px] font-bold text-[#0b1c30]">Scenario cards</h3>
+          <h3 className="text-[16px] font-bold text-[#0b1c30]">Kartu skenario</h3>
           <span className="text-[12px] text-[#5c5e64]">Opsi intervensi yang dibandingkan</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <SpecPanel muted title="Comparison table" icon={<Table2 className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
-          <SpecPanel muted title="Assumption panel" icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
-          <SpecPanel muted title="Recommendation panel" icon={<Scale className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
-          <SpecPanel muted title="Save scenario" icon={<LayoutGrid className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+          <SpecPanel muted title="Tabel perbandingan" icon={<Table2 className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+          <SpecPanel muted title="Panel asumsi" icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+          <SpecPanel muted title="Panel rekomendasi" icon={<Scale className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+          <SpecPanel muted title="Simpan skenario" icon={<LayoutGrid className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
         </div>
       </div>
     </div>

@@ -86,7 +86,6 @@ export function SpecPanel({
         className={`${bodyHeight} rounded-lg border border-dashed border-[#c4c6cd] bg-[#f8f9ff] flex flex-col items-center justify-center gap-1.5 text-center px-4`}
       >
         <FileText className="w-5 h-5 text-[#5c5e64]" />
-        <span className="text-[13px] font-semibold text-[#0b1c30]">Spesifikasi</span>
         <span className="text-[12px] text-[#5c5e64]">Belum dibangun pada prototipe ini.</span>
       </div>
     </div>

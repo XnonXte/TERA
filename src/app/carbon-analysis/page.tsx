@@ -18,15 +18,15 @@ export default function CarbonAnalysisPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SpecKpiCard label="Filter tahun dan periode" icon={<CalendarRange className="w-4 h-4 text-[#0b1c30]" />} />
-        <SpecKpiCard label="Emissions trend" icon={<TrendingUp className="w-4 h-4 text-[#b80035]" />} />
-        <SpecKpiCard label="Scope 1 versus Scope 2 breakdown" icon={<PieChart className="w-4 h-4 text-[#00675e]" />} />
-        <SpecKpiCard label="Data confidence and unresolved drivers" icon={<HelpCircle className="w-4 h-4 text-[#d97706]" />} />
+        <SpecKpiCard label="Tren emisi" icon={<TrendingUp className="w-4 h-4 text-[#b80035]" />} />
+        <SpecKpiCard label="Rincian Scope 1 dan Scope 2" icon={<PieChart className="w-4 h-4 text-[#00675e]" />} />
+        <SpecKpiCard label="Keyakinan data dan pendorong yang belum terselesaikan" icon={<HelpCircle className="w-4 h-4 text-[#d97706]" />} />
       </div>
 
       {/* Decomposition chart frame */}
       <SpecPanel
-        title="Carbon driver decomposition"
-        subtitle="Kontribusi setiap driver terhadap perubahan"
+        title="Dekomposisi pendorong emisi"
+        subtitle="Kontribusi setiap pendorong terhadap perubahan"
         icon={<BarChart3 className="w-4 h-4 text-[#b80035]" />}
         bodyHeight="h-64"
       />
@@ -35,14 +35,14 @@ export default function CarbonAnalysisPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <SpecPanel
           className="lg:col-span-1"
-          title="Methodology and emission-factor registry"
+          title="Metodologi dan registri faktor emisi"
           icon={<BookOpen className="w-4 h-4 text-[#0b1c30]" />}
           bodyHeight="h-72"
         />
         <SpecPanel
           className="lg:col-span-2"
-          title="Sources and calculation details"
-          subtitle="Nilai, unit, rumus, sumber, dan status per driver"
+          title="Sumber dan rincian perhitungan"
+          subtitle="Nilai, unit, rumus, sumber, dan status per pendorong"
           icon={<FileSearch className="w-4 h-4 text-[#0b1c30]" />}
           bodyHeight="h-72"
         />

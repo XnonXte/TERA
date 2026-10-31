@@ -20,10 +20,10 @@ export default function GovernancePage() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SpecKpiCard label="Total events" icon={<Activity className="w-4 h-4 text-[#0b1c30]" />} />
-        <SpecKpiCard label="Pending reviews" icon={<Clock className="w-4 h-4 text-[#d97706]" />} />
-        <SpecKpiCard label="Approved changes" icon={<CheckCircle2 className="w-4 h-4 text-[#00675e]" />} />
-        <SpecKpiCard label="Approval history" icon={<History className="w-4 h-4 text-[#b80035]" />} />
+        <SpecKpiCard label="Total peristiwa" icon={<Activity className="w-4 h-4 text-[#0b1c30]" />} />
+        <SpecKpiCard label="Menunggu review" icon={<Clock className="w-4 h-4 text-[#d97706]" />} />
+        <SpecKpiCard label="Perubahan disetujui" icon={<CheckCircle2 className="w-4 h-4 text-[#00675e]" />} />
+        <SpecKpiCard label="Riwayat persetujuan" icon={<History className="w-4 h-4 text-[#b80035]" />} />
       </div>
 
       {/* Filter bar frame (no controls: not built yet) */}
@@ -31,22 +31,22 @@ export default function GovernancePage() {
         <div className="flex items-center gap-2 text-[13px] text-[#0b1c30]">
           <Filter className="w-4 h-4 text-[#5c5e64]" />
           <span className="font-semibold">Filter:</span>
-          <span className="text-[#5c5e64]">tanggal, user role, event type, record ID</span>
+          <span className="text-[#5c5e64]">tanggal, peran pengguna, jenis peristiwa, ID rekaman</span>
         </div>
         <SpecPill />
       </div>
 
       {/* Activity log frame */}
       <SpecPanel
-        title="Activity log table"
-        subtitle="Event ID, timestamp, actor, action, object, previous state, new state, reason, related evidence"
+        title="Tabel log aktivitas"
+        subtitle="ID peristiwa, waktu, pelaku, aksi, objek, status sebelum, status sesudah, alasan, bukti terkait"
         icon={<ListOrdered className="w-4 h-4 text-[#0b1c30]" />}
         bodyHeight="h-56"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <SpecPanel title="Event detail drawer" icon={<PanelRight className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
-        <SpecPanel title="Role and permission overview" icon={<Users className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+        <SpecPanel title="Panel detail peristiwa" icon={<PanelRight className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
+        <SpecPanel title="Ringkasan peran dan izin" icon={<Users className="w-4 h-4 text-[#0b1c30]" />} bodyHeight="h-32" />
       </div>
     </div>
   );
