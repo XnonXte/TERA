@@ -24,7 +24,6 @@ export function SpecNotice({ purpose, extraNote }: { purpose: string; extraNote?
           <span className="font-semibold">Tujuan:</span> {purpose}
         </div>
         {extraNote && <div>{extraNote}</div>}
-        <div className="text-[12px]">Lihat PRD, bagian halaman terkait.</div>
       </div>
     </div>
   );

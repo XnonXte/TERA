@@ -9,13 +9,13 @@ export default function GovernancePage() {
       {/* Page Header */}
       <PageHeader
         badge="SPESIFIKASI"
-        title="Governance & Audit Trail"
+        title="Governance & Jejak Perubahan"
         description="Mencatat aktivitas dan keputusan."
       />
 
       <SpecNotice
         purpose="Mencatat aktivitas dan keputusan."
-        extraNote="Log pada prototipe tidak tahan manipulasi. Jejak audit sungguhan membutuhkan backend dengan log append-only (spesifikasi produksi, belum dibangun)."
+        extraNote="Log pada prototipe tidak tahan manipulasi. Jejak perubahan sungguhan membutuhkan backend dengan log terpisah dan akses terbatas (spesifikasi produksi, belum dibangun)."
       />
 
       {/* KPI Row */}

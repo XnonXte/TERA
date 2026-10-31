@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Baseline Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
   { name: "Carbon Driver Analysis", href: "/carbon-analysis", icon: CloudSun, spec: true },
   { name: "Decision Lab", href: "/decision-lab", icon: FlaskConical, spec: true },
-  { name: "Governance & Audit Trail", href: "/governance", icon: ShieldCheck, spec: true },
+  { name: "Governance & Jejak Perubahan", href: "/governance", icon: ShieldCheck, spec: true },
 ];
 
 export default function Sidebar() {
