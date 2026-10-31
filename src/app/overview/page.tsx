@@ -79,7 +79,7 @@ export default function OverviewPage() {
             {fmtAngka(n?.scope1_2)} <span className="text-[13px] font-medium text-[#5c5e64]">{SATUAN}</span>
           </div>
           <div className="text-[13px]">
-            Vs FY {tahunSebelum ?? KOSONG}:{" "}
+            {tahunSebelum ? `Vs FY ${tahunSebelum}: ` : "Vs tahun sebelumnya: "}
             <strong>{ubah ? `${fmtBertanda(ubah.absolute)} (${fmtPersen(ubah.percentage)})` : KOSONG}</strong>
           </div>
           {!ubah && <div className="text-[12px] text-[#5c5e64]">Tidak ada pembanding di seed.</div>}
