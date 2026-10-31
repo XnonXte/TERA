@@ -22,19 +22,13 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore } from "@/stores/useTeraStore";
 
 export default function OverviewPage() {
-  const { records, baselines, options, openDrawer, runValidation } = useTeraStore();
+  const { records, baselines, openDrawer, runValidation } = useTeraStore();
 
   const activeBaseline = baselines.find((b) => b.id === "v2024.1") || baselines[0];
   const draftBaseline = baselines.find((b) => b.id === "v2025.0-Draft");
 
   const openIssues = records.filter(
     (r) => (r.validationStatus === "error" || r.validationStatus === "warning") && !r.resolved
-  );
-
-  const selectedOptions = options.filter((o) => o.selected);
-  const totalReductionPlanned = selectedOptions.reduce(
-    (sum, o) => sum + (o.estimatedReductionTco2e || 0),
-    0
   );
 
   return (
@@ -67,7 +61,7 @@ export default function OverviewPage() {
       />
 
       {/* 4 Summary KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KpiCard
           label="Total GHG Footprint"
           value="1,284.2"
@@ -90,14 +84,6 @@ export default function OverviewPage() {
           badge={{ text: "Locked (12 Feb 2025)", variant: "green" }}
           subtitle="1 draft baseline pending review"
           icon={<History className="w-4 h-4 text-[#0b1c30]" />}
-        />
-        <KpiCard
-          label="Decarbonization Pipeline"
-          value={`-${totalReductionPlanned.toFixed(1)}`}
-          unit="tCO₂e/yr"
-          badge={{ text: `${selectedOptions.length} Interventions`, variant: "blue" }}
-          subtitle="Capex: Rp 35.7 B / Payback: 3.4 yrs"
-          icon={<Sliders className="w-4 h-4 text-[#b80035]" />}
         />
       </div>
 
