@@ -74,7 +74,7 @@ export default function ReconciliationPage() {
         footnote={`Sumber: ${v.a.sumber} → ${v.b.sumber}`}
       />
     ) : (
-      <KpiCard label={label} value={KOSONG} unit="tCO2e" subtitle="Nilai tidak ada di seed untuk kedua versi" />
+      <KpiCard label={label} value={KOSONG} unit="tCO2e" />
     );
 
   return (
@@ -266,18 +266,6 @@ export default function ReconciliationPage() {
             <h3 className="text-[16px] font-bold text-[#0b1c30]">Persetujuan (simulasi)</h3>
           </div>
         </div>
-
-        <p className="text-[13px] text-[#0b1c30]">
-          Alur: Draft → Pending Review → Approved/Rejected. Aksi berlaku untuk Baseline B (<strong>{versiB}</strong>,
-          status{" "}
-          <StatusBadge
-            status={statusB === "draft" ? "draft" : statusB}
-            label={LABEL_STATUS[statusB]}
-            size="sm"
-            showIcon={statusB !== "draft"}
-          />
-          ). Baseline aktif (simulasi): <strong>{baselineAktif ?? "Belum ada"}</strong>.
-        </p>
 
         {umpanBalik && !umpanBalik.ok && (
           <div role="status" className="p-3 bg-[#fff1f2] border border-[#ffdad6] rounded-lg text-[13px] text-[#93000a] flex items-center gap-2">
