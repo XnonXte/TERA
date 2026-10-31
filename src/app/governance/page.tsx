@@ -10,7 +10,6 @@ export default function GovernancePage() {
       <PageHeader
         badge="SPESIFIKASI"
         title="Governance & Jejak Perubahan"
-        description="Mencatat aktivitas dan keputusan."
       />
 
 

@@ -10,7 +10,6 @@ export default function CarbonAnalysisPage() {
       <PageHeader
         badge="SPESIFIKASI"
         title="Carbon Driver Analysis"
-        description="Memisahkan faktor penyebab perubahan emisi berdasarkan data yang tersedia."
       />
 
 

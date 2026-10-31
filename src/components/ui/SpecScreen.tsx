@@ -28,9 +28,6 @@ export function SpecKpiCard({ label, icon }: { label: string; icon?: React.React
       <div className="my-1">
         <SpecPill />
       </div>
-      <div className="flex items-center flex-wrap gap-2 mt-3 pt-2 border-t border-[#f1f5f9]">
-        <span className="text-[12px] text-[#5c5e64]">Belum dibangun pada prototipe ini</span>
-      </div>
     </div>
   );
 }
@@ -69,7 +66,6 @@ export function SpecPanel({
         className={`${bodyHeight} rounded-lg border border-dashed border-[#c4c6cd] bg-[#f8f9ff] flex flex-col items-center justify-center gap-1.5 text-center px-4`}
       >
         <FileText className="w-5 h-5 text-[#5c5e64]" />
-        <span className="text-[12px] text-[#5c5e64]">Belum dibangun pada prototipe ini.</span>
       </div>
     </div>
   );

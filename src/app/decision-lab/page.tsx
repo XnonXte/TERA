@@ -10,7 +10,6 @@ export default function DecisionLabPage() {
       <PageHeader
         badge="SPESIFIKASI"
         title="Decision Lab"
-        description="Membandingkan alternatif dekarbonisasi berdasarkan emisi, biaya, dan kelayakan."
       />
 
 

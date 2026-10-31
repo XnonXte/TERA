@@ -21,8 +21,6 @@ interface NavItem {
   spec?: boolean;
 }
 
-const SPEC_TOOLTIP = "Masih spesifikasi; belum dibangun pada prototipe ini";
-
 const NAV_ITEMS: NavItem[] = [
   { name: "Dashboard", href: "/overview", icon: LayoutGrid },
   { name: "Data Quality Center", href: "/data-quality", icon: BadgeCheck },
@@ -71,7 +69,6 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                title={item.spec ? SPEC_TOOLTIP : undefined}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                   active
                     ? "bg-[#b80035] text-[#ffffff] shadow-sm font-semibold"
