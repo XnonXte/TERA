@@ -76,7 +76,7 @@ export default function OverviewPage() {
               ? { value: fmtPersen(ubah.percentage), isPositiveGood: false, label: `vs FY ${tahunSebelum}` }
               : { value: KOSONG, isNeutral: true, label: "tanpa pembanding" }
           }
-          subtitle={ubah ? `${fmtBertanda(ubah.absolute)} ${SATUAN}` : "Tidak ada pembanding di seed"}
+          subtitle={ubah ? `${fmtBertanda(ubah.absolute)} ${SATUAN}` : undefined}
           footnote={`Sumber: ${SUMBER_DASHBOARD}`}
           icon={<Flame className="w-4 h-4 text-[#b80035]" />}
         />
@@ -144,9 +144,6 @@ export default function OverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-[14px] font-bold text-[#0b1c30]">Pemeriksaan ditandai</h3>
-              <p className="text-[12px] text-[#5c5e64]">
-                Aturan α dan β · in-sample
-              </p>
             </div>
             <Link
               href="/data-quality"
@@ -273,11 +270,6 @@ export default function OverviewPage() {
             </tbody>
           </table>
         </div>
-        {r?.ditandai.includes(1) && (
-          <p className="text-[11px] text-[#5c5e64]">
-            Scope 1 FY 2025 ditandai pada pemeriksaan #1 (jumlah komponen tidak sama dengan total tertulis).
-          </p>
-        )}
       </div>
     </div>
   );
