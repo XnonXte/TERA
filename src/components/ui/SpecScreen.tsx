@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Info } from "lucide-react";
+import { FileText } from "lucide-react";
 
 // Kerangka halaman yang masih spesifikasi: bentuk kartu mengikuti desain asli,
 // isinya hanya judul netral dari PRD dan label "Spesifikasi" (tanpa angka, tabel, atau grafik berisi data).
@@ -10,22 +10,6 @@ export function SpecPill() {
       <FileText className="w-3 h-3" />
       Spesifikasi
     </span>
-  );
-}
-
-/** Teks wajib panduan 3.5 dalam kotak keterangan bergaya asli. */
-export function SpecNotice({ purpose, extraNote }: { purpose: string; extraNote?: string }) {
-  return (
-    <div className="bg-[#fffbeb] border border-[#fef3c7] p-4 rounded-xl flex items-start gap-2.5">
-      <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
-      <div className="text-[13px] text-[#78350f] leading-relaxed space-y-1">
-        <div className="font-bold">Masih spesifikasi; belum dibangun pada prototipe ini.</div>
-        <div>
-          <span className="font-semibold">Tujuan:</span> {purpose}
-        </div>
-        {extraNote && <div>{extraNote}</div>}
-      </div>
-    </div>
   );
 }
 

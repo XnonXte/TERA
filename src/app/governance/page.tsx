@@ -1,6 +1,6 @@
 import { Activity, Clock, CheckCircle2, History, Filter, ListOrdered, PanelRight, Users } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { SpecNotice, SpecKpiCard, SpecPanel, SpecPill } from "@/components/ui/SpecScreen";
+import { SpecKpiCard, SpecPanel, SpecPill } from "@/components/ui/SpecScreen";
 
 // Kerangka halaman asli; judul kartu dari PRD Page 06 (Struktur section). Belum dibangun.
 export default function GovernancePage() {
@@ -13,10 +13,6 @@ export default function GovernancePage() {
         description="Mencatat aktivitas dan keputusan."
       />
 
-      <SpecNotice
-        purpose="Mencatat aktivitas dan keputusan."
-        extraNote="Log pada prototipe tidak tahan manipulasi. Jejak perubahan sungguhan membutuhkan backend dengan log terpisah dan akses terbatas (spesifikasi produksi, belum dibangun)."
-      />
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

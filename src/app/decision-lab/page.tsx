@@ -1,6 +1,6 @@
 import { Sliders, TrendingDown, Wallet, Receipt, Clock, BarChart3, LayoutGrid, Table2, ListChecks, Scale } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { SpecNotice, SpecKpiCard, SpecPanel } from "@/components/ui/SpecScreen";
+import { SpecKpiCard, SpecPanel } from "@/components/ui/SpecScreen";
 
 // Kerangka halaman asli; judul kartu dari PRD Page 05 (Struktur section dan KPI per opsi). Belum dibangun.
 export default function DecisionLabPage() {
@@ -13,7 +13,6 @@ export default function DecisionLabPage() {
         description="Membandingkan alternatif dekarbonisasi berdasarkan emisi, biaya, dan kelayakan."
       />
 
-      <SpecNotice purpose="Membandingkan alternatif dekarbonisasi berdasarkan emisi, biaya, dan kelayakan." />
 
       {/* Decision context (posisi panel parameter asli) */}
       <SpecPanel

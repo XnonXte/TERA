@@ -1,6 +1,6 @@
 import { CalendarRange, TrendingUp, PieChart, HelpCircle, BarChart3, BookOpen, FileSearch } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { SpecNotice, SpecKpiCard, SpecPanel } from "@/components/ui/SpecScreen";
+import { SpecKpiCard, SpecPanel } from "@/components/ui/SpecScreen";
 
 // Kerangka halaman asli; judul kartu dari PRD Page 04 "Struktur section". Belum dibangun.
 export default function CarbonAnalysisPage() {
@@ -13,7 +13,6 @@ export default function CarbonAnalysisPage() {
         description="Memisahkan faktor penyebab perubahan emisi berdasarkan data yang tersedia."
       />
 
-      <SpecNotice purpose="Memisahkan faktor penyebab perubahan emisi berdasarkan data yang tersedia." />
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
