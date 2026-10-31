@@ -48,14 +48,6 @@ export default function OverviewPage() {
               <RotateCw className="w-4 h-4 text-[#5c5e64]" />
               <span>Run Validation</span>
             </button>
-            <button
-              type="button"
-              onClick={() => alert("Board Briefing Summary Pack exported successfully (PDF).")}
-              className="flex items-center gap-2 px-4 py-2 bg-[#b80035] rounded-lg text-[13px] font-semibold text-white hover:bg-[#9f002d] transition-colors shadow"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export Briefing Pack</span>
-            </button>
           </>
         }
       />

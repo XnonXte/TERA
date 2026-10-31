@@ -9,7 +9,6 @@ interface TeraState {
   activeBaselineId: string;
   compareBaselineId: string;
   scope2Methodology: "location" | "market";
-  globalSearchQuery: string;
 
   // Data Quality State
   records: EmissionRecord[];
@@ -27,7 +26,6 @@ interface TeraState {
 
   // Actions
   setActivePeriod: (period: string) => void;
-  setGlobalSearchQuery: (query: string) => void;
   setScope2Methodology: (m: "location" | "market") => void;
 
   openDrawer: (record: EmissionRecord) => void;
@@ -53,7 +51,6 @@ export const useTeraStore = create<TeraState>((set, get) => ({
   activeBaselineId: "v2024.1",
   compareBaselineId: "v2025.0-Draft",
   scope2Methodology: "location",
-  globalSearchQuery: "",
 
   records: INITIAL_RECORDS,
   selectedRecord: null,
@@ -68,7 +65,6 @@ export const useTeraStore = create<TeraState>((set, get) => ({
   selectedReasonCategory: "Perubahan cakupan",
 
   setActivePeriod: (period) => set({ activePeriod: period }),
-  setGlobalSearchQuery: (query) => set({ globalSearchQuery: query }),
   setScope2Methodology: (m) => set({ scope2Methodology: m }),
 
   openDrawer: (record) => set({ selectedRecord: record, isDrawerOpen: true }),

@@ -78,14 +78,6 @@ export default function DataQualityPage() {
               <RotateCw className="w-4 h-4 text-[#5c5e64]" />
               <span>Run Validation Engine</span>
             </button>
-            <button
-              type="button"
-              onClick={() => alert("Telemetry ingestion pipeline active: 4 API streams connected.")}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0b1c30] rounded-lg text-[13px] font-semibold text-white hover:bg-[#1a2d45] transition-colors shadow"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Import Telemetry</span>
-            </button>
           </>
         }
       />
