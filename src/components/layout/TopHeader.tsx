@@ -4,6 +4,10 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User } from "lucide-react";
 import { useTeraStore } from "@/stores/useTeraStore";
+import Tooltip from "@/components/ui/Tooltip";
+
+const TEKS_SIMULASI =
+  "Prototipe simulasi. Data dari laporan keberlanjutan Telkomsel (SR 2023–2025), angka disalin dari halaman cetak. Persetujuan hanya di browser ini, tanpa login. Approved ≠ diaudit independen. Hasil aturan data bersifat in-sample, bukan bukti kinerja pada data lain.";
 
 export default function TopHeader() {
   const { activePeriod, setActivePeriod } = useTeraStore();
@@ -53,17 +57,13 @@ export default function TopHeader() {
           </select>
         </div>
 
-        {/* Demo Indicator Pills */}
-        <div className="flex items-center gap-1.5 bg-[#fff1f2] border border-[#ffdad6] px-2.5 py-1 rounded-full">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#b80035] animate-pulse" />
-          <span className="text-[11px] font-bold text-[#b80035] uppercase tracking-wider">Data demo</span>
-        </div>
-        <div className="flex items-center gap-1.5 bg-[#fff1f2] border border-[#ffdad6] px-2.5 py-1 rounded-full">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#b80035] animate-pulse" />
-          <span className="text-[11px] font-bold text-[#b80035] uppercase tracking-wider">
-            Simulasi, bukan integrasi produksi
+        {/* Demo Indicator Pill (keterangan simulasi di tooltip) */}
+        <Tooltip content={TEKS_SIMULASI} align="right" label="Simulasi: keterangan prototipe">
+          <span className="flex items-center gap-1.5 bg-[#fff1f2] border border-[#ffdad6] px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#b80035] animate-pulse" />
+            <span className="text-[11px] font-bold text-[#b80035] uppercase tracking-wider">Simulasi</span>
           </span>
-        </div>
+        </Tooltip>
 
         {/* User Pill */}
         <div className="flex items-center gap-2 pl-2 border-l border-[#e5eeff]">
