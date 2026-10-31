@@ -2,26 +2,35 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Play, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  RotateCw,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  ShieldCheck,
+  ListChecks,
+  ArrowUpDown,
+  Info,
+} from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import HasilBadge from "@/components/ui/HasilBadge";
+import KpiCard from "@/components/ui/KpiCard";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore } from "@/stores/useTeraStore";
 import { SEED, Cek, sumberLaporan, namaLaporan } from "@/lib/seed";
 import { HasilCek } from "@/lib/rules";
-import { INFO_ATURAN, labelHasil, satuanCek } from "@/lib/dq";
+import { INFO_ATURAN, TEKS_HASIL, labelHasil, satuanCek, LabelHasil } from "@/lib/dq";
 import { fmtAngka, fmtTetap, fmtBertanda, fmtWaktu, KOSONG } from "@/lib/format";
 
 type KolomUrut = "no" | "item" | "sumber" | "tertulis" | "hitung" | "selisih" | "toleransi" | "aturan" | "hasil";
 
-function Kartu({ label, nilai, ket }: { label: string; nilai: string; ket?: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-[#e5eeff] p-4 shadow-sm">
-      <div className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider">{label}</div>
-      <div className="text-[26px] font-bold text-[#0b1c30] mt-1">{nilai}</div>
-      {ket && <div className="text-[12px] text-[#5c5e64] mt-0.5">{ket}</div>}
-    </div>
-  );
-}
+// Hasil aplikasi memakai StatusBadge asli: Warning (ditandai), Valid (tidak ditandai), abu (di luar cakupan).
+const STATUS_BADGE: Record<LabelHasil, string> = {
+  ditandai: "warning",
+  tidak: "valid",
+  luar: "luar",
+  belum: "belum",
+};
 
 const daftarNo = (xs: number[]) => (xs.length ? xs.map((n) => `#${n}`).join(", ") : KOSONG);
 
@@ -93,12 +102,14 @@ function DataQualityContent() {
     });
   }, [cek, hasilByNo, fAturan, fHasil, fLaporan, cari, urut]);
 
+  const adaFilter = fAturan !== "semua" || fHasil !== "semua" || fLaporan !== "semua" || cari !== "";
+
   const th = (k: KolomUrut, label: string, kanan = false) => (
-    <th className={`px-3 py-2.5 font-semibold ${kanan ? "text-right" : "text-left"}`}>
+    <th className={`py-3 px-4 ${kanan ? "text-right" : ""}`}>
       <button
         type="button"
         onClick={() => setUrut((u) => ({ kolom: k, naik: u.kolom === k ? !u.naik : true }))}
-        className="inline-flex items-center gap-1 hover:text-[#0b1c30]"
+        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#0b1c30]"
       >
         {label}
         <ArrowUpDown className={`w-3 h-3 ${urut.kolom === k ? "text-[#b80035]" : "opacity-40"}`} />
@@ -106,175 +117,291 @@ function DataQualityContent() {
     </th>
   );
 
-  const sel =
-    "h-9 px-2.5 text-[13px] bg-white border border-[#c4c6cd]/60 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b80035]/20";
-
   return (
     <div className="space-y-6">
+      {/* Page Header */}
       <PageHeader
-        badge="Data Quality Center"
+        badge="DATA QUALITY CENTER"
         title="Pemeriksaan konsistensi angka laporan"
         description="32 pemeriksaan dari berkas D6 pada laporan keberlanjutan Telkomsel 2023-2025. Aplikasi menjalankan aturan α (DQ-08) dan β (DQ-09) di browser."
         actions={
           <button
             type="button"
             onClick={jalankanAturanDQ}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0b1c30] rounded-lg text-[13px] font-semibold text-white hover:bg-[#1a2d45] transition-colors shadow"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
           >
-            <Play className="w-4 h-4" />
+            <RotateCw className="w-4 h-4 text-[#5c5e64]" />
             <span>Jalankan aturan</span>
           </button>
         }
       />
 
-      {/* Pernyataan in-sample; semua angka dihitung aplikasi */}
-      <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-4 text-[13px] text-[#78350f] leading-relaxed">
-        {r ? (
-          <>
-            <strong>Hasil in-sample.</strong> Aturan dan toleransi dirancang dari data yang sama. Dari {r.gagalD6}{" "}
-            pemeriksaan yang gagal pada D6, {r.gagalD6Ditandai} ditandai aplikasi; {r.gagalD6DiLuarCakupan} lainnya di
-            luar cakupan aturan. {r.falsePositive} dari {r.lolosTercakup} pemeriksaan yang lolos ditandai. Ini bukan bukti
-            kinerja pada data lain.
-          </>
-        ) : (
-          <>Aturan belum dijalankan.</>
-        )}
-        <div className="mt-1 text-[12px]">Waktu eksekusi terakhir: {fmtWaktu(hasilAturan?.waktu ?? null)}</div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kartu label="Total pemeriksaan" nilai={String(cek.length)} ket={r ? `${r.tercakup} dalam cakupan aturan` : undefined} />
-        <Kartu label="Ditandai" nilai={r ? String(r.ditandai.length) : KOSONG} ket={r ? daftarNo(r.ditandai) : undefined} />
-        <Kartu label="Tidak ditandai" nilai={r ? String(r.tidakDitandai) : KOSONG} ket="Dalam cakupan aturan" />
-        <Kartu label="False positive" nilai={r ? String(r.falsePositive) : KOSONG} ket="Ditandai padahal lolos pada D6" />
-        <Kartu label="Di luar cakupan" nilai={r ? String(r.diLuarCakupan.length) : KOSONG} ket={r ? daftarNo(r.diLuarCakupan) : undefined} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {(["alpha", "beta"] as const).map((a) => {
-          const p = r?.perAturan[a];
-          return (
-            <div key={a} className="bg-white rounded-xl border border-[#e5eeff] p-4 shadow-sm text-[13px] space-y-1">
-              <div className="font-bold text-[#0b1c30]">
-                Aturan {INFO_ATURAN[a].simbol} ({INFO_ATURAN[a].ruleId})
-              </div>
-              <div className="text-[#5c5e64]">{INFO_ATURAN[a].nama}</div>
-              <div>{p ? `#${p.dari}-#${p.sampai} · ${p.jumlah} pemeriksaan · ${p.ditandai} ditandai` : KOSONG}</div>
-              <div className="text-[12px] text-[#5c5e64]">
-                Ditandai bila |hitung − tertulis| &gt; toleransi pemeriksaan (dari D6).
-              </div>
-            </div>
-          );
-        })}
-        <div className="bg-white rounded-xl border border-dashed border-[#c4c6cd] p-4 text-[13px] space-y-1">
-          <div className="font-bold text-[#0b1c30]">Aturan {INFO_ATURAN.di_luar_cakupan.simbol}</div>
-          <div className="text-[#5c5e64]">{INFO_ATURAN.di_luar_cakupan.nama}</div>
-          <div>{r ? `${daftarNo(r.diLuarCakupan)} · Tidak dikerjakan` : "Tidak dikerjakan"}</div>
+      {/* In-sample statement (values computed by the app) */}
+      <div className="bg-[#fffbeb] border border-[#fef3c7] p-4 rounded-xl flex items-start gap-2.5">
+        <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
+        <div className="text-[13px] text-[#78350f] leading-relaxed">
+          {r ? (
+            <>
+              <span className="font-bold">Hasil in-sample.</span> Aturan dan toleransi dirancang dari data yang sama. Dari{" "}
+              {r.gagalD6} pemeriksaan yang gagal pada D6, {r.gagalD6Ditandai} ditandai aplikasi; {r.gagalD6DiLuarCakupan}{" "}
+              lainnya di luar cakupan aturan. {r.falsePositive} dari {r.lolosTercakup} pemeriksaan yang lolos ditandai. Ini
+              bukan bukti kinerja pada data lain.
+            </>
+          ) : (
+            <>Aturan belum dijalankan.</>
+          )}
+          <div className="text-[12px] mt-1">Waktu eksekusi terakhir: {fmtWaktu(hasilAturan?.waktu ?? null)}</div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Filter aturan" className={sel} value={fAturan} onChange={(e) => setFAturan(e.target.value)}>
-          <option value="semua">Semua aturan</option>
-          <option value="alpha">Aturan α (DQ-08)</option>
-          <option value="beta">Aturan β (DQ-09)</option>
-          <option value="di_luar_cakupan">Di luar cakupan</option>
-        </select>
-        <select aria-label="Filter hasil" className={sel} value={fHasil} onChange={(e) => setFHasil(e.target.value)}>
-          <option value="semua">Semua hasil</option>
-          <option value="ditandai">Ditandai</option>
-          <option value="tidak">Tidak ditandai</option>
-          <option value="luar">Di luar cakupan</option>
-        </select>
-        <select aria-label="Filter laporan" className={sel} value={fLaporan} onChange={(e) => setFLaporan(e.target.value)}>
-          <option value="semua">Semua laporan</option>
-          {laporanList.map((l) => (
-            <option key={l} value={l}>
-              {namaLaporan(l)}
-            </option>
-          ))}
-        </select>
-        <input
-          type="search"
-          aria-label="Cari pemeriksaan"
-          placeholder="Cari…"
-          value={cari}
-          onChange={(e) => setCari(e.target.value)}
-          className={`${sel} w-56`}
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <KpiCard
+          label="Total"
+          value={cek.length}
+          unit="pemeriksaan"
+          badge={{ text: r ? `${r.tercakup} dalam cakupan` : KOSONG, variant: "blue" }}
+          subtitle="Berkas pemeriksaan D6"
+          icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />}
         />
-        <span className="text-[12px] text-[#5c5e64]">
-          {baris.length} dari {cek.length} pemeriksaan
-        </span>
+        <KpiCard
+          label="Ditandai"
+          value={r ? r.ditandai.length : KOSONG}
+          unit="pemeriksaan"
+          badge={{ text: "Warning", variant: "amber" }}
+          subtitle={r ? daftarNo(r.ditandai) : undefined}
+          icon={<AlertTriangle className="w-4 h-4 text-[#d97706]" />}
+        />
+        <KpiCard
+          label="Tidak ditandai"
+          value={r ? r.tidakDitandai : KOSONG}
+          unit="pemeriksaan"
+          subtitle="Dalam cakupan aturan"
+          icon={<CheckCircle2 className="w-4 h-4 text-[#00675e]" />}
+        />
+        <KpiCard
+          label="False positive"
+          value={r ? r.falsePositive : KOSONG}
+          unit="pemeriksaan"
+          footnote="Ditandai padahal lolos pada D6"
+          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
+        />
+        <KpiCard
+          label="Luar cakupan"
+          value={r ? r.diLuarCakupan.length : KOSONG}
+          unit="pemeriksaan"
+          subtitle={r ? daftarNo(r.diLuarCakupan) : undefined}
+          icon={<AlertCircle className="w-4 h-4 text-[#5c5e64]" />}
+        />
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e5eeff] shadow-sm overflow-x-auto">
-        <table className="w-full text-[13px]">
-          <thead className="bg-[#eff4ff] text-[12px] text-[#5c5e64]">
-            <tr>
-              {th("no", "#")}
-              {th("item", "Pemeriksaan")}
-              {th("sumber", "Sumber")}
-              {th("tertulis", "Tertulis", true)}
-              {th("hitung", "Hitung ulang", true)}
-              {th("selisih", "Selisih", true)}
-              {th("toleransi", "Toleransi", true)}
-              {th("aturan", "Aturan")}
-              {th("hasil", "Hasil aplikasi")}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#f1f5f9]">
-            {baris.map((c) => {
-              const h = hasilByNo.get(c.no);
-              const u = satuanCek(c);
-              const jenis = labelHasil(c, h);
-              return (
-                <tr
-                  key={c.no}
-                  onClick={() => bukaCek(c.no)}
-                  className={`cursor-pointer hover:bg-[#f8f9ff] ${jenis === "ditandai" ? "bg-[#fffdf5]" : ""}`}
-                >
-                  <td className="px-3 py-2.5 font-semibold">{c.no}</td>
-                  <td className="px-3 py-2.5 min-w-[240px]">{c.item}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[#5c5e64]">{sumberLaporan(c.laporan, c.halaman_cetak)}</td>
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    {fmtAngka(c.nilai_tertulis)} <span className="text-[#5c5e64] text-[11px]">{u.nilai}</span>
-                  </td>
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    {h?.hitung != null ? fmtTetap(h.hitung) : KOSONG}
-                  </td>
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    {h?.selisih != null ? (
-                      <>
-                        {fmtBertanda(h.selisih)} <span className="text-[#5c5e64] text-[11px]">{u.selisih}</span>
-                      </>
-                    ) : (
-                      KOSONG
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    {c.aturan_prototipe === "di_luar_cakupan" ? KOSONG : fmtAngka(c.toleransi_d6)}
-                  </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    {c.aturan_prototipe === "di_luar_cakupan"
-                      ? KOSONG
-                      : `${INFO_ATURAN[c.aturan_prototipe].simbol} (${INFO_ATURAN[c.aturan_prototipe].ruleId})`}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <HasilBadge jenis={jenis} />
-                    {jenis === "luar" && <div className="text-[11px] text-[#5c5e64] mt-1">Keterangan D6: {c.hasil_d6}</div>}
+      {/* Rule panel */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {(["alpha", "beta"] as const).map((a) => {
+          const p = r?.perAturan[a];
+          return (
+            <div key={a} className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[14px] font-bold text-[#0b1c30]">
+                  Aturan {INFO_ATURAN[a].simbol} ({INFO_ATURAN[a].ruleId})
+                </h3>
+                {p && <StatusBadge status={p.ditandai > 0 ? "warning" : "valid"} size="sm" label={`${p.ditandai} ditandai`} />}
+              </div>
+              <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN[a].nama}</p>
+              <p className="text-[13px] text-[#0b1c30]">{p ? `#${p.dari}-#${p.sampai} · ${p.jumlah} pemeriksaan` : KOSONG}</p>
+              <p className="text-[11px] text-[#5c5e64]">Ditandai bila |hitung − tertulis| &gt; toleransi pemeriksaan (dari D6).</p>
+            </div>
+          );
+        })}
+        <div className="bg-white rounded-xl border border-dashed border-[#c4c6cd] p-5 space-y-1.5">
+          <h3 className="text-[14px] font-bold text-[#0b1c30]">Aturan {INFO_ATURAN.di_luar_cakupan.simbol}</h3>
+          <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN.di_luar_cakupan.nama}</p>
+          <p className="text-[13px] text-[#0b1c30]">{r ? `${daftarNo(r.diLuarCakupan)} · Tidak dikerjakan` : "Tidak dikerjakan"}</p>
+        </div>
+      </div>
+
+      {/* Filter and Control Bar */}
+      <div className="bg-white p-4 rounded-xl border border-[#e5eeff] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Search Input */}
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-[#5c5e64] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={cari}
+            onChange={(e) => setCari(e.target.value)}
+            aria-label="Cari pemeriksaan"
+            placeholder="Cari…"
+            className="w-full h-9 pl-9 pr-3 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035]"
+          />
+        </div>
+
+        {/* Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
+            <span className="font-semibold text-[#5c5e64]">Aturan:</span>
+            <select
+              aria-label="Filter aturan"
+              value={fAturan}
+              onChange={(e) => setFAturan(e.target.value)}
+              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+            >
+              <option value="semua">Semua aturan</option>
+              <option value="alpha">α (DQ-08)</option>
+              <option value="beta">β (DQ-09)</option>
+              <option value="di_luar_cakupan">Di luar cakupan</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
+            <span className="font-semibold text-[#5c5e64]">Hasil:</span>
+            <select
+              aria-label="Filter hasil"
+              value={fHasil}
+              onChange={(e) => setFHasil(e.target.value)}
+              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+            >
+              <option value="semua">Semua hasil</option>
+              <option value="ditandai">Ditandai</option>
+              <option value="tidak">Tidak ditandai</option>
+              <option value="luar">Di luar cakupan</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
+            <span className="font-semibold text-[#5c5e64]">Laporan:</span>
+            <select
+              aria-label="Filter laporan"
+              value={fLaporan}
+              onChange={(e) => setFLaporan(e.target.value)}
+              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+            >
+              <option value="semua">Semua laporan</option>
+              {laporanList.map((l) => (
+                <option key={l} value={l}>
+                  {namaLaporan(l)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {adaFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setFAturan("semua");
+                setFHasil("semua");
+                setFLaporan("semua");
+                setCari("");
+              }}
+              className="text-[12px] font-semibold text-[#b80035] hover:underline"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Checks Table */}
+      <div className="bg-white rounded-xl border border-[#e5eeff] shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
+                {th("no", "#")}
+                {th("item", "Pemeriksaan")}
+                {th("sumber", "Sumber")}
+                {th("tertulis", "Tertulis", true)}
+                {th("hitung", "Hitung ulang", true)}
+                {th("selisih", "Selisih", true)}
+                {th("toleransi", "Toleransi", true)}
+                {th("aturan", "Aturan")}
+                {th("hasil", "Hasil aplikasi")}
+                <th className="py-3 px-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f5f9]">
+              {baris.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-[#5c5e64]">
+                    Tidak ada pemeriksaan yang cocok dengan filter.
                   </td>
                 </tr>
-              );
-            })}
-            {baris.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-[#5c5e64]">
-                  Tidak ada pemeriksaan yang cocok dengan filter.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ) : (
+                baris.map((c) => {
+                  const h = hasilByNo.get(c.no);
+                  const u = satuanCek(c);
+                  const jenis = labelHasil(c, h);
+                  const luar = c.aturan_prototipe === "di_luar_cakupan";
+                  return (
+                    <tr
+                      key={c.no}
+                      className="hover:bg-[#f8f9ff] transition-colors cursor-pointer group"
+                      onClick={() => bukaCek(c.no)}
+                    >
+                      <td className="py-3 px-4 font-bold text-[#0b1c30]">{c.no}</td>
+                      <td className="py-3 px-4 min-w-[220px]">
+                        <div className="font-semibold text-[#0b1c30]">{c.item}</div>
+                      </td>
+                      <td className="py-3 px-4 text-[#5c5e64] whitespace-nowrap">
+                        {sumberLaporan(c.laporan, c.halaman_cetak)}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="font-bold text-[#0b1c30]">{fmtAngka(c.nilai_tertulis)}</div>
+                        <div className="text-[11px] text-[#5c5e64]">{u.nilai}</div>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap text-[#0b1c30]">
+                        {h?.hitung != null ? fmtTetap(h.hitung) : KOSONG}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className={`font-bold ${jenis === "ditandai" ? "text-[#b80035]" : "text-[#0b1c30]"}`}>
+                          {h?.selisih != null ? fmtBertanda(h.selisih) : KOSONG}
+                        </div>
+                        {h?.selisih != null && <div className="text-[11px] text-[#5c5e64]">{u.selisih}</div>}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap text-[#5c5e64]">
+                        {luar ? KOSONG : fmtAngka(c.toleransi_d6)}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {luar ? (
+                          KOSONG
+                        ) : (
+                          <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
+                            {INFO_ATURAN[c.aturan_prototipe].simbol} {INFO_ATURAN[c.aturan_prototipe].ruleId}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={STATUS_BADGE[jenis]} label={TEKS_HASIL[jenis]} size="sm" showIcon={jenis !== "luar"} />
+                        {luar && <div className="text-[11px] text-[#5c5e64] mt-1">Keterangan D6: {c.hasil_d6}</div>}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            bukaCek(c.no);
+                          }}
+                          className="px-3 py-1 rounded text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors whitespace-nowrap"
+                        >
+                          Lihat detail
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Table footer count */}
+        <div className="p-4 bg-[#f8f9ff] border-t border-[#e5eeff] flex items-center justify-between text-[12px] text-[#5c5e64]">
+          <div>
+            Menampilkan <span className="font-bold text-[#0b1c30]">{baris.length}</span> dari{" "}
+            <span className="font-bold text-[#0b1c30]">{cek.length}</span> pemeriksaan
+          </div>
+          <div>Sumber: berkas pemeriksaan D6 (tera_seed.json)</div>
+        </div>
       </div>
     </div>
   );
