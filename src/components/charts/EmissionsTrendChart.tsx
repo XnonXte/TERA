@@ -4,6 +4,7 @@ import React from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -13,84 +14,118 @@ import {
 import { fmtAngka } from "@/lib/format";
 
 interface TitikTren {
-  tahun: string;
-  scope1_2: number;
+  year: string;
+  scope1: number;
+  scope2: number;
   target: number;
 }
 
 interface Props {
   data: TitikTren[];
-  tahunAktif: string;
   satuan: string;
   sumber: string;
 }
 
-// Tren Scope 1+2 dari seed; garis putus-putus = level target (estimasi tim).
-export default function EmissionsTrendChart({ data, tahunAktif, satuan, sumber }: Props) {
+// Tren Scope 1 & 2 (area bertumpuk) dari seed; garis putus-putus = level target (estimasi tim).
+export default function EmissionsTrendChart({ data, satuan, sumber }: Props) {
   return (
-    <div className="w-full bg-white p-5 rounded-xl border border-[#e5eeff] shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+    <div className="w-full h-80 bg-white p-5 rounded-xl border border-[#e5eeff] shadow-sm">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-[14px] font-bold text-[#0b1c30]">Tren Scope 1+2</h3>
+          <h3 className="text-[14px] font-bold text-[#0b1c30]">Tren emisi Scope 1 &amp; 2</h3>
           <p className="text-[12px] text-[#5c5e64]">
-            {data[0]?.tahun}-{data[data.length - 1]?.tahun} · {satuan} · Sumber: {sumber}
+            FY {data[0]?.year}–{data[data.length - 1]?.year} · {satuan} · Sumber: {sumber}
           </p>
         </div>
-        <div className="flex items-center gap-4 text-[11px] text-[#5c5e64]">
+        <div className="flex items-center gap-3 text-[11px] font-medium text-[#5c5e64]">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-[#b80035]" /> Scope 1+2
+            <span className="w-3 h-3 rounded bg-[#0b1c30]" /> Scope 2
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 border-t-2 border-dashed border-[#5c5e64]" /> Level target (estimasi tim)
+            <span className="w-3 h-3 rounded bg-[#b80035]" /> Scope 1
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 bg-[#00675e] border-t-2 border-dashed border-[#00675e]" /> Level target
+            (estimasi tim)
           </span>
         </div>
       </div>
-      <div className="w-full h-64">
+
+      <div className="w-full h-[calc(100%-3rem)]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorScope2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#0b1c30" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#0b1c30" stopOpacity={0.0} />
+              </linearGradient>
+              <linearGradient id="colorScope1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#b80035" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#b80035" stopOpacity={0.0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis dataKey="tahun" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={{ stroke: "#e2e8f0" }} />
+            <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={{ stroke: "#e2e8f0" }} />
             <YAxis
               stroke="#94a3b8"
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              width={70}
+              width={64}
               domain={[0, "auto"]}
-              tickFormatter={(v: number) => fmtAngka(v, 0)}
+              tickFormatter={(v: number) => `${fmtAngka(v / 1_000_000, 1)} jt`}
             />
             <Tooltip
-              formatter={(v) => `${fmtAngka(Number(v))} ${satuan}`}
-              labelFormatter={(l) => `Tahun ${l}`}
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="bg-[#0b1c30] text-white p-3 rounded-lg shadow-xl text-[12px] space-y-1">
+                      <div className="font-bold text-white border-b border-white/10 pb-1 mb-1">FY {label}</div>
+                      {payload.map((entry, index) => {
+                        if (entry.value === null || entry.value === undefined) return null;
+                        return (
+                          <div key={`item-${index}`} className="flex items-center justify-between gap-4">
+                            <span className="text-[#c4c6cd]">{entry.name}:</span>
+                            <span className="font-semibold text-white">
+                              {fmtAngka(Number(entry.value))} {satuan}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                return null;
+              }}
             />
-            <Line
-              type="linear"
-              dataKey="scope1_2"
-              name="Scope 1+2"
+            <Area
+              type="monotone"
+              dataKey="scope2"
+              name="Scope 2"
+              stackId="1"
+              stroke="#0b1c30"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorScope2)"
+            />
+            <Area
+              type="monotone"
+              dataKey="scope1"
+              name="Scope 1"
+              stackId="1"
               stroke="#b80035"
               strokeWidth={2}
-              isAnimationActive={false}
-              dot={(p: { cx?: number; cy?: number; payload?: TitikTren }) => (
-                <circle
-                  key={p.payload?.tahun}
-                  cx={p.cx}
-                  cy={p.cy}
-                  r={p.payload?.tahun === tahunAktif ? 6 : 3.5}
-                  fill="#b80035"
-                  stroke="#fff"
-                  strokeWidth={1.5}
-                />
-              )}
+              fillOpacity={1}
+              fill="url(#colorScope1)"
             />
             <Line
-              type="linear"
+              type="monotone"
               dataKey="target"
               name="Level target (estimasi tim)"
-              stroke="#5c5e64"
-              strokeWidth={1.5}
-              strokeDasharray="5 5"
-              dot={false}
-              isAnimationActive={false}
+              stroke="#00675e"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={{ r: 3, fill: "#00675e" }}
             />
           </ComposedChart>
         </ResponsiveContainer>

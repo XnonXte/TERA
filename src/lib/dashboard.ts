@@ -56,8 +56,9 @@ export const LEVEL_TARGET = D.level_target;
 
 export function deretTren() {
   return TAHUN.map((t) => ({
-    tahun: t,
-    scope1_2: D.tahun[t].scope1_2,
+    year: t,
+    scope1: D.tahun[t].scope1,
+    scope2: D.tahun[t].scope2,
     target: D.level_target.nilai,
   }));
 }

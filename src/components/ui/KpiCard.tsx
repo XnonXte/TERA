@@ -17,6 +17,8 @@ interface KpiCardProps {
     variant?: "default" | "red" | "green" | "amber" | "blue";
   };
   icon?: React.ReactNode;
+  /** Teks tambahan (mis. sumber) di bawah baris subjudul; boleh lebih dari satu baris. */
+  footnote?: React.ReactNode;
   onClick?: () => void;
   className?: string;
 }
@@ -29,6 +31,7 @@ export default function KpiCard({
   subtitle,
   badge,
   icon,
+  footnote,
   onClick,
   className = "",
 }: KpiCardProps) {
@@ -119,6 +122,8 @@ export default function KpiCard({
           )}
         </div>
       )}
+
+      {footnote && <div className="text-[11px] text-[#5c5e64] mt-2 leading-snug">{footnote}</div>}
     </div>
   );
 }
