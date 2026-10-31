@@ -25,7 +25,7 @@ import {
 import { SEED, sumberLaporan } from "@/lib/seed";
 import { INFO_ATURAN, TEKS_HASIL } from "@/lib/dq";
 import { REVISI } from "@/lib/reconciliation";
-import { fmtAngka, fmtBertanda, fmtPersen, fmtWaktu, KOSONG } from "@/lib/format";
+import { fmtAngka, fmtBertanda, fmtPersen, KOSONG } from "@/lib/format";
 
 export default function OverviewPage() {
   const router = useRouter();
@@ -87,14 +87,13 @@ export default function OverviewPage() {
           subtitle={
             r ? `${r.ditandai.map((x) => `#${x}`).join(", ")} · ${r.diLuarCakupan.length} di luar cakupan` : "Aturan belum dijalankan"
           }
-          footnote={`Dalam cakupan aturan α/β. Dihitung aplikasi, ${fmtWaktu(hasilAturan?.waktu ?? null)}.`}
+          footnote="Sumber: dihitung aplikasi"
           onClick={() => router.push("/data-quality")}
           icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
         />
         <KpiCard
           label={`Kenaikan ${naik.akhir} vs ${naik.awal}`}
           value={fmtPersen(naik.hitungUlangPct)}
-          subtitle="Dihitung ulang dari tabel"
           badge={{
             text: `Callout ${fmtPersen(naik.calloutPct, 2, false)}${r?.ditandai.includes(19) ? " · ditandai #19" : " · #19"}`,
             variant: "red",
@@ -113,7 +112,8 @@ export default function OverviewPage() {
             isNeutral: true,
             label: `gap FY ${TAHUN[TAHUN.length - 1]}`,
           }}
-          footnote={`${LEVEL_TARGET.label}. Sumber: hitungan tim.`}
+          info={LEVEL_TARGET.label}
+          footnote="Sumber: hitungan tim"
           icon={<Sliders className="w-4 h-4 text-[#b80035]" />}
         />
       </div>
