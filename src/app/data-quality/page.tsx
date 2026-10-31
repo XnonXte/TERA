@@ -142,7 +142,6 @@ function DataQualityContent() {
           value={cek.length}
           unit="pemeriksaan"
           badge={{ text: r ? `${r.tercakup} dalam cakupan` : KOSONG, variant: "blue" }}
-          subtitle="Berkas pemeriksaan D6"
           icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />}
         />
         <KpiCard
@@ -164,7 +163,6 @@ function DataQualityContent() {
           label="False positive"
           value={r ? r.falsePositive : KOSONG}
           unit="pemeriksaan"
-          footnote="Ditandai padahal lolos pada D6"
           icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
         />
         <KpiCard
@@ -190,14 +188,13 @@ function DataQualityContent() {
               </div>
               <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN[a].nama}</p>
               <p className="text-[13px] text-[#0b1c30]">{p ? `#${p.dari}-#${p.sampai} · ${p.jumlah} pemeriksaan` : KOSONG}</p>
-              <p className="text-[11px] text-[#5c5e64]">Ditandai bila |hitung − tertulis| &gt; toleransi pemeriksaan (dari D6).</p>
             </div>
           );
         })}
         <div className="bg-white rounded-xl border border-dashed border-[#c4c6cd] p-5 space-y-1.5">
           <h3 className="text-[14px] font-bold text-[#0b1c30]">Aturan {INFO_ATURAN.di_luar_cakupan.simbol}</h3>
           <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN.di_luar_cakupan.nama}</p>
-          <p className="text-[13px] text-[#0b1c30]">{r ? `${daftarNo(r.diLuarCakupan)} · Tidak dikerjakan` : "Tidak dikerjakan"}</p>
+          <p className="text-[13px] text-[#0b1c30]">{r ? daftarNo(r.diLuarCakupan) : KOSONG}</p>
         </div>
       </div>
 
@@ -383,7 +380,6 @@ function DataQualityContent() {
             Menampilkan <span className="font-bold text-[#0b1c30]">{baris.length}</span> dari{" "}
             <span className="font-bold text-[#0b1c30]">{cek.length}</span> pemeriksaan
           </div>
-          <div>Sumber: berkas pemeriksaan D6 (tera_seed.json)</div>
         </div>
       </div>
     </div>

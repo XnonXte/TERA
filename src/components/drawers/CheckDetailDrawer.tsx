@@ -111,10 +111,6 @@ export default function CheckDetailDrawer() {
               <Info className="w-4 h-4 text-[#b45309] shrink-0 mt-0.5" />
               <div className="text-[11px] text-[#78350f] leading-relaxed">
                 <span className="font-bold">Keterangan D6:</span> {c.catatan_d6 || KOSONG}
-                <div className="mt-1">
-                  Hasil aturan bersifat in-sample: aturan dan toleransi dirancang dari data yang sama. Tanda berarti angka
-                  perlu ditinjau, bukan kesimpulan bahwa angka laporan salah.
-                </div>
               </div>
             </div>
           </div>
