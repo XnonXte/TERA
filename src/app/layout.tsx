@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
-import FindingDetailDrawer from "@/components/drawers/FindingDetailDrawer";
+import CheckDetailDrawer from "@/components/drawers/CheckDetailDrawer";
 
 export const metadata: Metadata = {
   title: "TERA · Prototipe Terbatas",
@@ -39,7 +39,7 @@ export default function RootLayout({
           </main>
         </div>
 
-        <FindingDetailDrawer />
+        <CheckDetailDrawer />
       </body>
     </html>
   );

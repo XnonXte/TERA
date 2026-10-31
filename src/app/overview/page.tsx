@@ -22,14 +22,10 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore } from "@/stores/useTeraStore";
 
 export default function OverviewPage() {
-  const { records, baselines, openDrawer, runValidation } = useTeraStore();
+  const { baselines } = useTeraStore();
 
   const activeBaseline = baselines.find((b) => b.id === "v2024.1") || baselines[0];
   const draftBaseline = baselines.find((b) => b.id === "v2025.0-Draft");
-
-  const openIssues = records.filter(
-    (r) => (r.validationStatus === "error" || r.validationStatus === "warning") && !r.resolved
-  );
 
   return (
     <div className="space-y-8">
@@ -40,14 +36,6 @@ export default function OverviewPage() {
         description="FY 2025 Scope 1 & 2 operational footprint summary, data quality integrity assurance, and baseline reconciliation tracking for Telkomsel."
         actions={
           <>
-            <button
-              type="button"
-              onClick={runValidation}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
-            >
-              <RotateCw className="w-4 h-4 text-[#5c5e64]" />
-              <span>Run Validation</span>
-            </button>
           </>
         }
       />
@@ -61,14 +49,6 @@ export default function OverviewPage() {
           delta={{ value: "+12.0%", isPositiveGood: false, label: "vs v2024.1" }}
           subtitle="Scope 1 (20.6%) + Scope 2 (79.4%)"
           icon={<Flame className="w-4 h-4 text-[#b80035]" />}
-        />
-        <KpiCard
-          label="Data Quality Health"
-          value="97.7%"
-          unit="Auditable"
-          badge={{ text: `${openIssues.length} Open Findings`, variant: "amber" }}
-          subtitle="Evaluated against DQ-01 to DQ-07"
-          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
         />
         <KpiCard
           label="Active Baseline"
@@ -91,64 +71,6 @@ export default function OverviewPage() {
 
       {/* Bottom Row: Open Findings & Governance Snapshot */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Urgent Data Quality Findings */}
-        <div className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[14px] font-bold text-[#0b1c30]">
-                Urgent Data Quality Findings
-              </h3>
-              <p className="text-[12px] text-[#5c5e64]">
-                Records triggering pre-ingestion validation errors or variance warnings
-              </p>
-            </div>
-            <Link
-              href="/data-quality"
-              className="text-[12px] font-semibold text-[#b80035] hover:underline flex items-center gap-1"
-            >
-              <span>View all ({records.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-[#f1f5f9]">
-            {openIssues.slice(0, 3).map((item) => (
-              <div
-                key={item.id}
-                onClick={() => openDrawer(item)}
-                className="py-3 flex items-start justify-between gap-4 cursor-pointer hover:bg-[#f8f9ff] px-2 rounded-lg transition-colors"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold text-[#0b1c30]">
-                      {item.id}
-                    </span>
-                    <span className="text-[11px] text-[#5c5e64]">{item.period}</span>
-                    <StatusBadge
-                      status={item.validationStatus}
-                      size="sm"
-                      label={item.validationStatus === "error" ? "Critical" : "Warning"}
-                    />
-                  </div>
-                  <div className="text-[13px] font-medium text-[#0b1c30]">
-                    {item.issueTitle || item.metric}
-                  </div>
-                  <div className="text-[11px] text-[#5c5e64]">
-                    Source: {item.sourceRef} • Scope: {item.scope}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-[#b80035] bg-[#fff1f2] rounded border border-[#ffdad6] hover:bg-[#ffe4e6] shrink-0"
-                >
-                  Investigate
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Baseline Reconciliation Governance Status */}
         <div className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-4 flex flex-col justify-between">
           <div>

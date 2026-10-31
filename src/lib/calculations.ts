@@ -1,4 +1,4 @@
-import { DifferenceResult, EmissionRecord } from "@/types/tera";
+import { DifferenceResult } from "@/types/tera";
 
 /**
  * Calculates absolute and percentage difference between previous and current values.
@@ -61,25 +61,4 @@ export function calculateAbatementRatio(
   }
   // (Capex in Billion * 1,000 Million) / Reduction tCO2e
   return (capexIdrBillion * 1000) / annualReductionTco2e;
-}
-
-/**
- * Aggregates emissions by Scope from a list of records.
- */
-export function calculateScopeEmissions(records: EmissionRecord[]) {
-  let scope1 = 0;
-  let scope2 = 0;
-
-  for (const r of records) {
-    if (r.value !== null && r.validationStatus === "valid") {
-      if (r.scope === "Scope 1") scope1 += r.value;
-      if (r.scope === "Scope 2") scope2 += r.value;
-    }
-  }
-
-  return {
-    scope1,
-    scope2,
-    total: scope1 + scope2,
-  };
 }
