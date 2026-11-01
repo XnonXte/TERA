@@ -36,3 +36,18 @@ export function fmtWaktu(iso: string | null): string {
     second: "2-digit",
   });
 }
+
+const JUTA = 1000000;
+const DESIMAL_JUTA = 2;
+const DESIMAL_KONTRIBUSI = 1;
+
+/** "1,74 jt" untuk label sumbu dan batang. */
+export function fmtJuta(v: number | null | undefined): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return KOSONG;
+  return `${fmtAngka(v / JUTA, DESIMAL_JUTA)} jt`;
+}
+
+/** Persen kontribusi dengan 1 desimal dan tanda. */
+export function fmtPersenKontribusi(v: number | null | undefined): string {
+  return fmtPersen(v, DESIMAL_KONTRIBUSI);
+}

@@ -2,6 +2,11 @@
 
 import React from "react";
 import { CarbonDriver } from "@/types/tera";
+import { skalaWaterfall, JUMLAH_GARIS_SUMBU } from "@/lib/hitung-carbon";
+import { fmtBertanda, fmtJuta } from "@/lib/format";
+
+const JUMLAH_GARIS = JUMLAH_GARIS_SUMBU;
+const juta = fmtJuta;
 
 interface WaterfallChartProps {
   drivers: CarbonDriver[];
@@ -15,14 +20,16 @@ export default function WaterfallChart({
   onSelectDriver,
 }: WaterfallChartProps) {
   // SVG coordinate calculations
+  const maxYKosong = 0;
   const chartHeight = 260;
   const paddingBottom = 45;
   const paddingTop = 30;
   const usableHeight = chartHeight - paddingTop - paddingBottom;
 
-  // Domain: 1,000 to 1,350 tCO2e
-  const minY = 1000;
-  const maxY = 1350;
+  // Domain dihitung dari data yang ditampilkan
+  const skala = skalaWaterfall(drivers.length ? drivers.map((d) => d.runningVal) : [maxYKosong], JUMLAH_GARIS);
+  const minY = skala.bawah;
+  const maxY = skala.atas;
   const rangeY = maxY - minY;
 
   const getY = (val: number) => {
@@ -39,11 +46,11 @@ export default function WaterfallChart({
               Dekomposisi pendorong emisi
             </h3>
             <span className="text-[11px] font-bold bg-[#fff1f2] text-[#b80035] px-2 py-0.5 rounded-full border border-[#ffdad6]">
-              Spesifikasi
+              Dihitung dari seed
             </span>
           </div>
           <p className="text-[12px] text-[#5c5e64]">
-            —
+            {drivers.length ? `${drivers[0].name} → ${drivers[drivers.length - 1].name} · ${drivers[0].source}` : "—"}
           </p>
         </div>
         <div className="flex items-center gap-3 text-[11px] font-medium text-[#5c5e64]">
@@ -57,7 +64,7 @@ export default function WaterfallChart({
             <span className="w-2.5 h-2.5 rounded bg-[#00675e]" /> Penurunan
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-[#f59e0b] border border-dashed border-[#b45309]" /> Belum terselesaikan
+            <span className="w-2.5 h-2.5 rounded bg-[#f59e0b] border border-dashed border-[#b45309]" /> Pembulatan
           </span>
         </div>
       </div>
@@ -89,7 +96,7 @@ export default function WaterfallChart({
           </defs>
 
           {/* Grid lines */}
-          {[1000, 1100, 1200, 1300].map((level) => {
+          {skala.garis.map((level) => {
             const y = getY(level);
             return (
               <g key={level}>
@@ -109,7 +116,7 @@ export default function WaterfallChart({
                   textAnchor="end"
                   fontFamily="sans-serif"
                 >
-                  —
+                  {juta(level)}
                 </text>
               </g>
             );
@@ -132,13 +139,13 @@ export default function WaterfallChart({
               barY = getY(driver.deltaTco2e);
               barH = chartHeight - paddingBottom - barY;
               fillColor = "#0b1c30";
-              valLabel = "—";
+              valLabel = juta(driver.deltaTco2e);
             } else if (index === drivers.length - 1) {
               // 2025 Result Anchor
               barY = getY(driver.deltaTco2e);
               barH = chartHeight - paddingBottom - barY;
               fillColor = "#0b1c30";
-              valLabel = "—";
+              valLabel = juta(driver.deltaTco2e);
             } else {
               prevVal = drivers[index - 1].runningVal;
               const curVal = driver.runningVal;
@@ -147,18 +154,18 @@ export default function WaterfallChart({
                 barY = getY(curVal);
                 barH = getY(prevVal) - getY(curVal);
                 fillColor = "#b80035";
-                valLabel = `+${driver.deltaTco2e.toFixed(1)}`;
+                valLabel = fmtBertanda(driver.deltaTco2e);
               } else if (driver.type === "reduction") {
                 barY = getY(prevVal);
                 barH = getY(curVal) - getY(prevVal);
                 fillColor = "#00675e";
-                valLabel = `${driver.deltaTco2e.toFixed(1)}`;
+                valLabel = fmtBertanda(driver.deltaTco2e);
               } else {
                 // Unresolved gap
                 barY = getY(curVal) - 10;
                 barH = 20;
                 fillColor = "url(#diagonalHatch)";
-                valLabel = "—";
+                valLabel = fmtBertanda(driver.deltaTco2e);
               }
             }
 

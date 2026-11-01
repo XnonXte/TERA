@@ -5,7 +5,7 @@ export interface CarbonDriver {
   id: string;
   name: string;
   subLabel: string;
-  category: "Activity" | "Emission Factor" | "Boundary / Scope" | "Energy Efficiency" | "Telemetry Gap";
+  category: string;
   scope: "Scope 1" | "Scope 2" | "Scope 1+2";
   deltaTco2e: number;
   type: DriverType;

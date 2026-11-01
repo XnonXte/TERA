@@ -15,35 +15,89 @@ import {
 } from "lucide-react";
 import WaterfallChart from "@/components/charts/WaterfallChart";
 import { CarbonDriver } from "@/types/tera";
+import { SEED, sumberLaporan } from "@/lib/seed";
+import { TAHUN, nilaiTahun, SUMBER_DASHBOARD } from "@/lib/dashboard";
+import { dekomposisi, langkahWaterfall, persenTerhadap, lebarBatang } from "@/lib/hitung-carbon";
+import { jalankanAturan } from "@/lib/rules";
+import { REVISI } from "@/lib/reconciliation";
+import { fmtAngka, fmtBertanda, fmtPersen, fmtPersenKontribusi, KOSONG } from "@/lib/format";
 
-// Halaman spesifikasi: belum ada data pendorong di seed.
 const SPESIFIKASI = "Spesifikasi";
-const D = "—";
+const D = KOSONG;
+const DARI_SEED = "Dihitung dari seed";
+
+// Pasangan tahun dari seed: berurutan, lalu tahun pertama → terakhir.
+const PASANGAN: [string, string][] = [
+  ...TAHUN.slice(1).map((t, i): [string, string] => [TAHUN[i], t]),
+  [TAHUN[0], TAHUN[TAHUN.length - 1]],
+];
+// Kunci chip asli dipakai sebagai indeks pasangan.
+const KUNCI_CHIP = ["All", "Scope 1", "Scope 2"];
+const label = (p?: [string, string]) => (p ? `${p[0]}→${p[1]}` : D);
+// Hasil aturan dan revisi yang belum terselesaikan (dari seed, deterministik).
+const ATURAN = jalankanAturan(SEED.cek_32).ringkasan;
+const REVISI_UNRESOLVED = REVISI.filter((r) => r.kodeAlasan === "Unresolved").length;
+const daftarNo = (xs: number[]) => xs.map((n) => `#${n}`).join(", ");
 
 export default function CarbonAnalysisPage() {
-  const drivers: CarbonDriver[] = [];
-
-  const [activeScopeFilter, setActiveScopeFilter] = useState("All");
-  const [selectedDriver, setSelectedDriver] = useState<CarbonDriver | undefined>(drivers[0]);
+  const [activeScopeFilter, setActiveScopeFilter] = useState(KUNCI_CHIP[PASANGAN.length - 1]);
   const [tableCategory, setTableCategory] = useState("All");
+  const pasangan = PASANGAN[KUNCI_CHIP.indexOf(activeScopeFilter)] ?? PASANGAN[PASANGAN.length - 1];
+  const [tAwal, tAkhir] = pasangan;
+  const awal = nilaiTahun(tAwal)!;
+  const akhir = nilaiTahun(tAkhir)!;
+  const dk = dekomposisi(awal, akhir);
+  const persenTotal = persenTerhadap(dk.deltaTotal, awal.scope1_2);
+  const kontribusi = (x: number) => persenTerhadap(x, dk.deltaTotal);
+  // Pemeriksaan α yang membandingkan komponen dengan total tertulis FY akhir (SR terbaru).
+  const cekTotal = SEED.cek_32.find(
+    (c) =>
+      c.aturan_prototipe === "alpha" &&
+      c.nilai_tertulis === akhir.scope1_2 &&
+      sumberLaporan(c.laporan, c.halaman_cetak) === SUMBER_DASHBOARD
+  );
+  const dominan = Math.abs(dk.deltaScope2) >= Math.abs(dk.deltaScope1) ? "Scope 2" : "Scope 1";
+  const lebar = lebarBatang;
+
+  // Langkah waterfall → bentuk data yang dipakai grafik dan tabel desain.
+  const drivers: CarbonDriver[] = useMemo(
+    () =>
+      langkahWaterfall(dk, tAwal, tAkhir).map((l) => ({
+        id: l.id,
+        name: l.nama,
+        subLabel:
+          l.id === "BULAT" && cekTotal ? `#${cekTotal.no}` : l.jenis === "anchor" ? "tertulis" : "akhir − awal",
+        category: l.id === "BULAT" && cekTotal ? `${SUMBER_DASHBOARD} · pemeriksaan #${cekTotal.no}` : SUMBER_DASHBOARD,
+        scope: l.id === "S1" ? "Scope 1" : l.id === "S2" ? "Scope 2" : "Scope 1+2",
+        deltaTco2e: l.nilai,
+        type: l.jenis,
+        uncertaintyStatus: "terverifikasi",
+        formula:
+          l.id === "BULAT"
+            ? "Total tertulis − (awal + Δ Scope 2 + Δ Scope 1)"
+            : l.jenis === "anchor"
+            ? "Total tertulis"
+            : "FY akhir − FY awal",
+        source: SUMBER_DASHBOARD,
+        runningVal: l.kumulatif,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tAwal, tAkhir]
+  );
+  const [selectedDriver, setSelectedDriver] = useState<CarbonDriver | undefined>(undefined);
 
 
   // Filtered drivers for the registry table
   const filteredDrivers = useMemo(() => {
     return drivers.filter((d) => {
-      if (activeScopeFilter === "Scope 1" && d.scope !== "Scope 1") return false;
-      if (activeScopeFilter === "Scope 2" && d.scope !== "Scope 2") return false;
-      if (activeScopeFilter === "Material" && Math.abs(d.deltaTco2e) < 10) return false;
-
-      if (tableCategory !== "All") {
-        if (!d.category.toLowerCase().includes(tableCategory.toLowerCase())) {
-          return false;
-        }
-      }
+      if (d.type === "anchor") return false; // tabel hanya berisi pendorong
+      if (tableCategory === "Boundary" && d.id !== "S2") return false;
+      if (tableCategory === "Grid" && d.id !== "S1") return false;
+      if (tableCategory === "Operational" && d.id !== "BULAT") return false;
 
       return true;
     });
-  }, [drivers, activeScopeFilter, tableCategory]);
+  }, [drivers, tableCategory]);
 
   return (
     <div className="space-y-6 pb-8">
@@ -63,7 +117,7 @@ export default function CarbonAnalysisPage() {
             Carbon Driver Analysis
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Memisahkan faktor penyebab perubahan emisi berdasarkan data yang tersedia.
+            Memisahkan perubahan Scope 1+2 menjadi Δ Scope 2, Δ Scope 1, dan pembulatan dari angka laporan.
           </p>
         </div>
 
@@ -83,41 +137,38 @@ export default function CarbonAnalysisPage() {
         <button
           type="button"
           onClick={() => setActiveScopeFilter("All")}
-          disabled
-          title={SPESIFIKASI}
+          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "All"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Semua pendorong ({D})
+          FY {label(PASANGAN[0])}
         </button>
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 1")}
-          disabled
-          title={SPESIFIKASI}
+          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 1"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Scope 1 ({D})
+          FY {label(PASANGAN[1])}
         </button>
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 2")}
-          disabled
-          title={SPESIFIKASI}
+          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 2"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Scope 2 ({D})
+          FY {label(PASANGAN[2])}
         </button>
         <button
           type="button"
@@ -130,7 +181,7 @@ export default function CarbonAnalysisPage() {
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Pendorong material ({D})
+          Pasangan lain ({D})
         </button>
       </div>
 
@@ -140,14 +191,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Filter tahun dan periode
+              Scope 1+2 · FY {tAkhir}
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtAngka(akhir.scope1_2)}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            {SPESIFIKASI}
+            FY {tAwal}: {fmtAngka(awal.scope1_2)} tCO₂e · {SUMBER_DASHBOARD}
           </div>
         </div>
 
@@ -155,14 +206,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Tren emisi
+              Perubahan Scope 1+2 · FY {label(pasangan)}
             </div>
             <div className="text-[30px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtBertanda(dk.deltaTotal)}
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            {SPESIFIKASI}
+            {fmtPersen(persenTotal)} terhadap FY {tAwal} · {DARI_SEED}
           </div>
         </div>
 
@@ -170,14 +221,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Rincian Scope 1 dan Scope 2
+              Kontribusi Scope 2 terhadap perubahan
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtPersenKontribusi(dk.kontribusiScope2Pct)}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            {SPESIFIKASI}
+            Kontribusi Scope 1: {fmtPersenKontribusi(dk.kontribusiScope1Pct)} · {DARI_SEED}
           </div>
         </div>
 
@@ -185,14 +236,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Keyakinan data dan pendorong yang belum terselesaikan
+              Pendorong belum terselesaikan
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {REVISI_UNRESOLVED}
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            {SPESIFIKASI}
+            revisi Unresolved · ditandai {daftarNo(ATURAN.ditandai)} · di luar cakupan {daftarNo(ATURAN.diLuarCakupan)}
           </div>
         </div>
       </div>
@@ -208,10 +259,10 @@ export default function CarbonAnalysisPage() {
       <div className="bg-white rounded-[12px] p-6 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-            Rincian Scope 1 dan Scope 2
+            Kontribusi terhadap perubahan FY {label(pasangan)}
           </h3>
           <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
-            {SPESIFIKASI}
+            {DARI_SEED}
           </span>
         </div>
 
@@ -221,12 +272,12 @@ export default function CarbonAnalysisPage() {
             <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30] mb-1.5">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#b80035]" />
-                <span>{D}</span>
+                <span>Δ Scope 2</span>
               </div>
-              <span className="text-[13px] font-bold">{D}</span>
+              <span className="text-[13px] font-bold">{fmtBertanda(dk.deltaScope2)} tCO₂e ({fmtPersenKontribusi(kontribusi(dk.deltaScope2))})</span>
             </div>
             <div className="w-full bg-[#f1f5f9] h-3 rounded-full overflow-hidden">
-              <div className="bg-[#b80035] h-full rounded-full" style={{ width: "0%" }} />
+              <div className="bg-[#b80035] h-full rounded-full" style={{ width: lebar(dk.kontribusiScope2Pct) }} />
             </div>
           </div>
 
@@ -234,12 +285,12 @@ export default function CarbonAnalysisPage() {
             <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30] mb-1.5">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-[#ffb3b6]" />
-                <span>{D}</span>
+                <span>Δ Scope 1</span>
               </div>
-              <span className="text-[13px] font-bold">{D}</span>
+              <span className="text-[13px] font-bold">{fmtBertanda(dk.deltaScope1)} tCO₂e ({fmtPersenKontribusi(kontribusi(dk.deltaScope1))})</span>
             </div>
             <div className="w-full bg-[#f1f5f9] h-3 rounded-full overflow-hidden">
-              <div className="bg-[#ffb3b6] h-full rounded-full" style={{ width: "0%" }} />
+              <div className="bg-[#ffb3b6] h-full rounded-full" style={{ width: lebar(dk.kontribusiScope1Pct) }} />
             </div>
           </div>
         </div>
@@ -248,8 +299,8 @@ export default function CarbonAnalysisPage() {
         <div className="p-4 bg-[#eff4ff] border border-[#dce9ff] rounded-[10px] flex items-start gap-3">
           <Info className="w-5 h-5 text-[#00675e] shrink-0 mt-0.5" />
           <div className="text-[12px] text-[#0b1c30] leading-relaxed">
-            <span className="font-bold">{SPESIFIKASI}: </span>
-            <strong>{D}</strong> {D} <strong>{D}</strong> {D}
+            <span className="font-bold">Temuan: </span>
+            <strong>Perubahan {label(pasangan)}</strong> secara aritmetik didominasi <strong>{dominan}</strong>. Sebab perubahan tidak dinyatakan pada seed: Belum terbukti.
           </div>
         </div>
       </div>
@@ -262,7 +313,7 @@ export default function CarbonAnalysisPage() {
               Sumber dan rincian perhitungan
             </h3>
             <p className="text-[12px] text-[#5c5e64] mt-0.5">
-              {SPESIFIKASI}
+              {DARI_SEED} · FY {label(pasangan)}
             </p>
           </div>
 
@@ -270,54 +321,46 @@ export default function CarbonAnalysisPage() {
             <button
               type="button"
               onClick={() => setTableCategory("All")}
-              disabled
-              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "All"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Semua kategori
+              Semua
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Boundary")}
-              disabled
-              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Boundary"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Perubahan cakupan
+              Scope 2
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Grid")}
-              disabled
-              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Grid"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Faktor emisi
+              Scope 1
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Operational")}
-              disabled
-              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Operational"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Efisiensi
+              Pembulatan
             </button>
           </div>
         </div>
@@ -327,13 +370,13 @@ export default function CarbonAnalysisPage() {
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
                 <th className="py-3 px-4">ID</th>
-                <th className="py-3 px-4">PENDORONG</th>
-                <th className="py-3 px-4">KATEGORI</th>
+                <th className="py-3 px-4">PENDORONG / RUMUS</th>
+                <th className="py-3 px-4">SUMBER</th>
                 <th className="py-3 px-4">SCOPE</th>
-                <th className="py-3 px-4 text-right">DAMPAK (tCO₂e)</th>
+                <th className="py-3 px-4 text-right">NILAI (tCO₂e)</th>
                 <th className="py-3 px-4 text-right">KONTRIBUSI</th>
-                <th className="py-3 px-4">KEYAKINAN DATA</th>
                 <th className="py-3 px-4">STATUS</th>
+                <th className="py-3 px-4">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -344,9 +387,9 @@ export default function CarbonAnalysisPage() {
                 const isSelected = selectedDriver?.id === driver.id;
 
                 const contribPercent =
-                  driver.type === "increase" || driver.type === "reduction"
+                  driver.type === "anchor"
                     ? D
-                    : "—";
+                    : fmtPersenKontribusi(kontribusi(driver.deltaTco2e));
 
                 return (
                   <tr
@@ -365,7 +408,7 @@ export default function CarbonAnalysisPage() {
                         {driver.name}
                       </div>
                       <div className="text-[11px] text-[#5c5e64]">
-                        {driver.subLabel}
+                        {driver.formula}
                       </div>
                     </td>
 
@@ -393,12 +436,12 @@ export default function CarbonAnalysisPage() {
                             : "text-[#0b1c30]"
                         }`}
                       >
-                        {isInc ? `+${driver.deltaTco2e.toFixed(1)}` : driver.deltaTco2e.toFixed(1)} t
+                        {fmtBertanda(driver.deltaTco2e)}
                       </span>
                     </td>
 
                     <td className="py-3.5 px-4 text-right font-semibold text-[#0b1c30]">
-                      {contribPercent !== "—" ? `${contribPercent}%` : "—"}
+                      {contribPercent}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -411,7 +454,7 @@ export default function CarbonAnalysisPage() {
                             : "bg-[#ffdad6] text-[#b80035]"
                         }`}
                       >
-                        {driver.uncertaintyStatus}
+                        {driver.uncertaintyStatus === "terverifikasi" ? DARI_SEED : D}
                       </span>
                     </td>
 

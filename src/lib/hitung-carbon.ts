@@ -69,3 +69,17 @@ export function skalaWaterfall(nilai: number[], jumlahGaris: number) {
   const garis = Array.from({ length: jumlahGaris }, (_, i) => bawah + ((atas - bawah) * i) / jumlahGaris);
   return { bawah, atas, garis };
 }
+
+const PERSEN = 100;
+
+/** Persen perubahan terhadap nilai awal; null bila awal 0. */
+export function persenTerhadap(delta: number, dasar: number): number | null {
+  return dasar === 0 ? null : (delta / dasar) * PERSEN;
+}
+
+/** Lebar batang (CSS) dari persen kontribusi: nilai mutlak, dibatasi 100%. */
+export function lebarBatang(persen: number | null): string {
+  return `${Math.min(Math.abs(persen ?? 0), PERSEN)}%`;
+}
+
+export const JUMLAH_GARIS_SUMBU = 4;
