@@ -68,7 +68,7 @@ export default function OverviewPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* GHG Protocol Compliant Badge */}
+          {/* Simulasi Badge */}
           <div className="flex items-center gap-2 bg-[#eff4ff] px-3.5 py-2 rounded-[8px] border border-[#dce9ff]" title={TEKS_SIMULASI}>
             <ShieldCheck className="w-4 h-4 text-[#00675e]" />
             <div className="text-[11px] text-[#5c5e64] leading-tight font-medium">
@@ -415,7 +415,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* 5. Section - Recent Activity (Audit Trail) */}
+      {/* 5. Section - Recent Activity */}
       <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_1px_1px_rgba(0,0,0,0.05)] space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

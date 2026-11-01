@@ -12,7 +12,7 @@ import {
   Sliders,
   Info,
 } from "lucide-react";
-import AbatementMacChart from "@/components/charts/AbatementMacChart";
+import CostEffectivenessChart from "@/components/charts/CostEffectivenessChart";
 import { DecarbonizationOption } from "@/types/tera";
 
 // Halaman spesifikasi: belum ada data opsi intervensi di seed.
@@ -111,7 +111,7 @@ export default function DecisionLabPage() {
           </div>
         </div>
 
-        {/* Card 2: Total Capex */}
+        {/* Card 2: Biaya implementasi */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
@@ -172,7 +172,7 @@ export default function DecisionLabPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Capex Slider */}
+          {/* Slider biaya */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[12px]">
               <span className="font-semibold text-[#0b1c30]">
@@ -244,8 +244,8 @@ export default function DecisionLabPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {options.map((opt) => {
             const isOptSelected = opt.selected;
-            const capex = D;
-            const payback = D;
+            const biaya = D;
+            const waktu = D;
 
             return (
               <div
@@ -306,7 +306,7 @@ export default function DecisionLabPage() {
                   <div>
                     <span className="text-[#5c5e64] block">Biaya:</span>
                     <strong className="text-[#0b1c30]">
-                      {capex}
+                      {biaya}
                     </strong>
                   </div>
                   <div>
@@ -318,7 +318,7 @@ export default function DecisionLabPage() {
                   <div>
                     <span className="text-[#5c5e64] block">Waktu:</span>
                     <strong className="text-[#0b1c30]">
-                      {payback}
+                      {waktu}
                     </strong>
                   </div>
                 </div>
@@ -328,8 +328,8 @@ export default function DecisionLabPage() {
         </div>
       </div>
 
-      {/* 6. MACC Visual Chart Component */}
-      <AbatementMacChart
+      {/* 6. Grafik efektivitas biaya */}
+      <CostEffectivenessChart
         options={options}
         onToggleOption={(id) => toggleOption(id)}
       />

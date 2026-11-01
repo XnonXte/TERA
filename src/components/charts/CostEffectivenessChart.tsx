@@ -3,15 +3,15 @@
 import React from "react";
 import { DecarbonizationOption } from "@/types/tera";
 
-interface AbatementMacChartProps {
+interface CostEffectivenessChartProps {
   options: DecarbonizationOption[];
   onToggleOption?: (id: string) => void;
 }
 
-export default function AbatementMacChart({
+export default function CostEffectivenessChart({
   options,
   onToggleOption,
-}: AbatementMacChartProps) {
+}: CostEffectivenessChartProps) {
   // Sort options with valid cost effectiveness in ascending order of MAC ratio
   const validOptions = [...options]
     .filter((o) => o.costEffectiveness !== null)
@@ -48,7 +48,7 @@ export default function AbatementMacChart({
         </div>
       </div>
 
-      {/* Visual MACC Items */}
+      {/* Visual Items */}
       <div className="space-y-3 pt-1">
         {validOptions.map((opt) => {
           const ratio = opt.costEffectiveness || 0;

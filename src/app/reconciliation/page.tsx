@@ -296,7 +296,7 @@ export default function ReconciliationPage() {
           </div>
         </div>
 
-        {/* Card 4: Audit Requirement */}
+        {/* Card 4: Kode alasan */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
@@ -457,7 +457,7 @@ export default function ReconciliationPage() {
         </div>
       </div>
 
-      {/* 6. Reviewer Sign-off Form */}
+      {/* 6. Persetujuan (simulasi) */}
       <div className="bg-white rounded-[12px] border border-[#e5eeff] p-6 shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-[#e5eeff]">
           <div className="flex items-center gap-2">

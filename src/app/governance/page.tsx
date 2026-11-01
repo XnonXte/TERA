@@ -23,7 +23,7 @@ const SPESIFIKASI = "Spesifikasi";
 const D = "—";
 
 export default function GovernancePage() {
-  const auditEvents: LogEvent[] = [];
+  const logEvents: LogEvent[] = [];
 
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("All");
@@ -32,7 +32,7 @@ export default function GovernancePage() {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   const filteredEvents = useMemo(() => {
-    return auditEvents.filter((ev) => {
+    return logEvents.filter((ev) => {
       if (filterAction !== "All" && ev.action !== filterAction) return false;
       if (filterObject !== "All" && ev.objectType !== filterObject) return false;
 
@@ -47,7 +47,7 @@ export default function GovernancePage() {
 
       return true;
     });
-  }, [auditEvents, filterAction, filterObject, search]);
+  }, [logEvents, filterAction, filterObject, search]);
 
   const copyToClipboard = (hash?: string) => {
     if (!hash) return;
@@ -129,7 +129,7 @@ export default function GovernancePage() {
           </div>
         </div>
 
-        {/* Card 2: Baseline Ratifications */}
+        {/* Card 2: Menunggu review */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
@@ -260,9 +260,9 @@ export default function GovernancePage() {
         </div>
       </div>
 
-      {/* 5. Main 2-Column Content: Audit Log Ledger + Approval Chain */}
+      {/* 5. Main 2-Column Content: Log + Riwayat persetujuan */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column: Audit Log Ledger Table (8 cols) */}
+        {/* Left Column: Tabel log (8 cols) */}
         <div className="lg:col-span-8 bg-white rounded-[12px] border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] overflow-hidden">
           <div className="p-5 border-b border-[#e5eeff] flex items-center justify-between">
             <div>
@@ -363,9 +363,9 @@ export default function GovernancePage() {
           </div>
         </div>
 
-        {/* Right Column: Approval Sign-off Chain (4 cols) */}
+        {/* Right Column: Riwayat persetujuan (4 cols) */}
         <div className="lg:col-span-4 space-y-5">
-          {/* Sign-off Chain Container */}
+          {/* Riwayat persetujuan */}
           <div className="bg-white rounded-[12px] border border-[#e5eeff] p-5 shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#e5eeff]">
               <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
