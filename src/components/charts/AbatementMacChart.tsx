@@ -28,14 +28,14 @@ export default function AbatementMacChart({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Marginal Abatement Cost Curve (MACC)
+              Grafik efektivitas biaya
             </h3>
             <span className="text-[11px] font-bold bg-[#eff4ff] text-[#00675e] px-2.5 py-0.5 rounded-full border border-[#dce9ff]">
-              Cost-Efficiency Ranked
+              Spesifikasi
             </span>
           </div>
           <p className="text-[12px] text-[#5c5e64] mt-0.5">
-            Levelized cost per tCO₂e abated vs decarbonization volume (tCO₂e/year)
+            —
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function AbatementMacChart({
         <div className="flex items-center gap-2 bg-[#fff1f2] border border-[#ffdad6] px-3 py-1.5 rounded-[8px] text-[11px]">
           <span className="w-2.5 h-0.5 bg-[#b80035] border-t-2 border-dashed border-[#b80035]" />
           <span className="text-[#5c5e64]">
-            Internal Carbon Ceiling: <strong className="text-[#b80035]">Rp 350.0M / tCO₂e</strong>
+            Batas harga karbon internal: <strong className="text-[#b80035]">—</strong>
           </span>
         </div>
       </div>
@@ -86,12 +86,12 @@ export default function AbatementMacChart({
                   </span>
                   {isNetNegative && (
                     <span className="text-[10px] font-bold bg-[#dcfce7] text-[#15803d] px-2 py-0.5 rounded-full">
-                      Net Cost Savings
+                      —
                     </span>
                   )}
                   {isAboveCeiling && (
                     <span className="text-[10px] font-bold bg-[#ffdad6] text-[#b80035] px-2 py-0.5 rounded-full">
-                      Above Ceiling
+                      —
                     </span>
                   )}
                 </div>
@@ -108,13 +108,13 @@ export default function AbatementMacChart({
                           : "text-[#0b1c30]"
                       }
                     >
-                      {ratio > 0 ? `Rp ${ratio.toFixed(1)}M` : `-Rp ${Math.abs(ratio).toFixed(1)}M`} / t
+                      —
                     </strong>
                   </div>
                   <div>
                     <span className="text-[#5c5e64]">Volume: </span>
                     <strong className="text-[#00675e]">
-                      -{opt.estimatedReductionTco2e} tCO₂e/yr
+                      —
                     </strong>
                   </div>
                 </div>
@@ -143,10 +143,10 @@ export default function AbatementMacChart({
         {options.some((o) => o.costEffectiveness === null) && (
           <div className="p-3 bg-[#fffbeb] border border-[#fef3c7] rounded-[8px] flex items-center justify-between text-[11px] text-[#78350f]">
             <span className="font-bold">
-              Notice: OPT-04 (Biofuel Genset Blending B50)
+              —
             </span>
             <span>
-              Abatement ratio omitted: data insufficient (zero/uncertain reduction factor per Section 4.3).
+              —
             </span>
           </div>
         )}
