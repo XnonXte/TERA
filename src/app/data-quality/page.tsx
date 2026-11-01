@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
@@ -15,92 +16,105 @@ import {
   FileCheck,
   Building,
 } from "lucide-react";
-import { useTeraStore } from "@/stores/useTeraStore";
+import { useSeedStore } from "@/stores/useSeedStore";
+import { SEED, namaLaporan, sumberLaporan } from "@/lib/seed";
+import { HasilCek } from "@/lib/rules";
+import { INFO_ATURAN, labelHasil, satuanCek } from "@/lib/dq";
+import { fmtAngka, fmtTetap, fmtBertanda, KOSONG } from "@/lib/format";
 
-export default function DataQualityPage() {
-  const {
-    records,
-    openDrawer,
-    runValidation,
-    activeFilterScope,
-    setFilterScope,
-    activeFilterStatus,
-    setFilterStatus,
-    activeFilterIssueType,
-    setFilterIssueType,
-  } = useTeraStore();
+function DataQualityContent() {
+  const params = useSearchParams();
+  const { hasilAturan, jalankanAturanDQ, bukaCek } = useSeedStore();
+  const cek = SEED.cek_32;
 
+  // Filter (bentuk asli dipertahankan; isinya dari seed)
+  const [activeFilterScope, setFilterScope] = useState("All"); // aturan
+  const [activeFilterStatus, setFilterStatus] = useState("All"); // hasil
+  const [selectedFacility, setSelectedFacility] = useState("All"); // laporan
+  const [activeFilterIssueType, setFilterIssueType] = useState("All"); // kelompok
   const [search, setSearch] = useState("");
-  const [selectedFacility, setSelectedFacility] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  // Derived counts
-  const totalCount = 1026; // Figma display count
-  const criticalCount = records.filter(
-    (r) => r.validationStatus === "error" && !r.resolved
-  ).length;
-  const warningCount = records.filter(
-    (r) => r.validationStatus === "warning" && !r.resolved
-  ).length;
-  const resolvedCount = records.filter((r) => r.resolved).length;
-  const healthRate = "85.0";
+  // Aturan α/β dijalankan sekali di browser bila belum ada hasil.
+  useEffect(() => {
+    if (!hasilAturan) jalankanAturanDQ();
+  }, [hasilAturan, jalankanAturanDQ]);
 
-  // Filtered records
+  // Tautan langsung: ?cek=19 membuka detail; ?q=... dari pencarian header.
+  const paramCek = params.get("cek");
+  const paramQ = params.get("q");
+  useEffect(() => {
+    const no = Number(paramCek);
+    if (no && cek.some((c) => c.no === no)) bukaCek(no);
+  }, [paramCek, cek, bukaCek]);
+  useEffect(() => {
+    if (paramQ !== null) {
+      setSearch(paramQ);
+      setCurrentPage(1);
+    }
+  }, [paramQ]);
+
+  const hasilByNo = useMemo(() => {
+    const m = new Map<number, HasilCek>();
+    hasilAturan?.hasil.forEach((x) => m.set(x.no, x));
+    return m;
+  }, [hasilAturan]);
+  const r = hasilAturan?.ringkasan;
+  const laporanList = useMemo(() => Array.from(new Set(cek.map((c) => c.laporan))).sort(), [cek]);
+  const kelompokList = useMemo(() => Array.from(new Set(cek.map((c) => c.kelompok))).sort(), [cek]);
+
+  // Kartu ringkasan (dihitung aplikasi)
+  const totalCount = cek.length;
+  const healthRate = r ? String(r.tidakDitandai) : KOSONG;
+  const criticalCount = r ? r.ditandai.length : KOSONG;
+  const warningCount = r ? r.diLuarCakupan.length : KOSONG;
+  const daftarNo = (xs: number[]) => xs.map((n) => `#${n}`).join(", ");
+
+  // Baris tabel: pemeriksaan dari seed dipetakan ke field tampilan.
+  const records = useMemo(
+    () =>
+      cek.map((c) => {
+        const h = hasilByNo.get(c.no);
+        const u = satuanCek(c);
+        const jenis = labelHasil(c, h);
+        return {
+          no: c.no,
+          id: `#${c.no}`,
+          sourceRef: c.item,
+          metric: sumberLaporan(c.laporan, c.halaman_cetak),
+          scope: namaLaporan(c.laporan),
+          period: `hlm ${c.halaman_cetak}`,
+          value: c.nilai_tertulis as number | null,
+          unit: h?.hitung != null ? `hitung ulang ${fmtTetap(h.hitung)} ${u.nilai}`.trim() : u.nilai || KOSONG,
+          jenis,
+          laporan: c.laporan,
+          kelompok: c.kelompok,
+          aturan: c.aturan_prototipe,
+          issueTitle:
+            c.aturan_prototipe === "di_luar_cakupan"
+              ? "Di luar cakupan"
+              : `${INFO_ATURAN[c.aturan_prototipe].simbol} ${INFO_ATURAN[c.aturan_prototipe].ruleId}`,
+          ruleId: h?.selisih != null ? `selisih ${fmtBertanda(h.selisih)} ${u.selisih}` : "",
+        };
+      }),
+    [cek, hasilByNo]
+  );
+
   const filtered = useMemo(() => {
-    return records.filter((r) => {
-      if (activeFilterScope !== "All" && r.scope !== activeFilterScope)
-        return false;
-      if (
-        activeFilterStatus === "Critical" &&
-        (r.validationStatus !== "error" || r.resolved)
-      )
-        return false;
-      if (
-        activeFilterStatus === "Warning" &&
-        (r.validationStatus !== "warning" || r.resolved)
-      )
-        return false;
-      if (
-        activeFilterStatus === "Valid" &&
-        r.validationStatus !== "valid" &&
-        !r.resolved
-      )
-        return false;
-      if (activeFilterStatus === "Resolved" && !r.resolved) return false;
-
-      if (
-        activeFilterIssueType !== "All" &&
-        r.issueType !== activeFilterIssueType
-      )
-        return false;
-
-      if (selectedFacility !== "All") {
-        if (!r.sourceRef?.toLowerCase().includes(selectedFacility.toLowerCase())) {
-          return false;
-        }
-      }
-
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const matchId = r.id.toLowerCase().includes(q);
-        const matchMetric = r.metric.toLowerCase().includes(q);
-        const matchSource = (r.sourceRef || "").toLowerCase().includes(q);
-        const matchIssue = (r.issueTitle || "").toLowerCase().includes(q);
-        if (!matchId && !matchMetric && !matchSource && !matchIssue)
-          return false;
-      }
-
+    const q = search.trim().toLowerCase();
+    return records.filter((x) => {
+      if (activeFilterScope !== "All" && x.aturan !== activeFilterScope) return false;
+      if (activeFilterStatus !== "All" && x.jenis !== activeFilterStatus) return false;
+      if (selectedFacility !== "All" && x.laporan !== selectedFacility) return false;
+      if (activeFilterIssueType !== "All" && x.kelompok !== activeFilterIssueType) return false;
+      if (q && !`${x.id} ${x.sourceRef} ${x.metric}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [
-    records,
-    activeFilterScope,
-    activeFilterStatus,
-    activeFilterIssueType,
-    selectedFacility,
-    search,
-  ]);
+  }, [records, activeFilterScope, activeFilterStatus, selectedFacility, activeFilterIssueType, search]);
+
+  const openDrawer = (record: { no: number }) => bukaCek(record.no);
+  const runValidation = jalankanAturanDQ;
 
   // Paginated records
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
@@ -114,7 +128,7 @@ export default function DataQualityPage() {
       {/* 1. Breadcrumb */}
       <nav className="flex items-center gap-2 text-[12px] text-[#5c5e64]">
         <Link href="/overview" className="hover:text-[#0b1c30] transition-colors">
-          Home
+          Beranda
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-[#5c5e64]/60" />
         <span className="font-semibold text-[#0b1c30]">Data Quality Center</span>
@@ -127,20 +141,19 @@ export default function DataQualityPage() {
             Data Quality Center
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Validate, audit, and clean telemetry data before calculating your carbon baseline.
+            32 pemeriksaan dari berkas D6 pada laporan keberlanjutan Telkomsel 2023–2025.
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={() =>
-              alert("Data Quality Report (CSV/PDF) generated with 24 findings and 872 valid records.")
-            }
+            disabled
+            title="Spesifikasi"
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
           >
             <Download className="w-4 h-4 text-[#5c5e64]" />
-            <span>Export Report</span>
+            <span>Ekspor laporan</span>
           </button>
 
           <button
@@ -149,7 +162,7 @@ export default function DataQualityPage() {
             className="flex items-center gap-2 px-4 py-2.5 bg-[#b80035] rounded-[8px] text-[13px] font-semibold text-white hover:bg-[#9f002d] transition-colors shadow-sm"
           >
             <RotateCw className="w-4 h-4" />
-            <span>Run Validation (24)</span>
+            <span>Jalankan aturan</span>
           </button>
         </div>
       </div>
@@ -160,14 +173,14 @@ export default function DataQualityPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Total Telemetry Records
+              Total pemeriksaan
             </div>
             <div className="text-[32px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {totalCount.toLocaleString()}
+              {totalCount}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            Across 4 business units
+            {r ? `${r.tercakup} dalam cakupan aturan α/β` : KOSONG}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#0b1c30]" />
         </div>
@@ -176,14 +189,14 @@ export default function DataQualityPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Quality Health Rate
+              Tidak ditandai
             </div>
             <div className="text-[32px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {healthRate}%
+              {healthRate}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold flex items-center gap-1">
-            <span>+2.4% vs last cycle</span>
+            <span>Dalam cakupan aturan α/β</span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#00675e]" />
         </div>
@@ -192,14 +205,14 @@ export default function DataQualityPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Critical Violations
+              Ditandai
             </div>
             <div className="text-[32px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight mt-1">
               {criticalCount}
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-medium">
-            Requires immediate action
+            {r ? `${daftarNo(r.ditandai)} · Warning` : KOSONG}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#b80035]" />
         </div>
@@ -208,14 +221,14 @@ export default function DataQualityPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Warning Anomalies
+              Di luar cakupan
             </div>
             <div className="text-[32px] font-bold text-[#d97706] tracking-[-0.9px] leading-tight mt-1">
               {warningCount}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            12 imputed, 4 variance
+            {r ? daftarNo(r.diLuarCakupan) : KOSONG}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#d97706]" />
         </div>
@@ -233,7 +246,8 @@ export default function DataQualityPage() {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search by facility, meter, or violation..."
+            aria-label="Cari pemeriksaan"
+            placeholder="Cari pemeriksaan…"
             className="w-full h-10 pl-9 pr-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all"
           />
         </div>
@@ -250,9 +264,10 @@ export default function DataQualityPage() {
               }}
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Scopes</option>
-              <option value="Scope 1">Scope 1 (Direct)</option>
-              <option value="Scope 2">Scope 2 (Indirect)</option>
+              <option value="All">Semua aturan</option>
+              <option value="alpha">α (DQ-08)</option>
+              <option value="beta">β (DQ-09)</option>
+              <option value="di_luar_cakupan">Di luar cakupan</option>
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -267,11 +282,10 @@ export default function DataQualityPage() {
               }}
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Severities</option>
-              <option value="Critical">Critical (Error)</option>
-              <option value="Warning">Warning</option>
-              <option value="Valid">Valid</option>
-              <option value="Resolved">Resolved</option>
+              <option value="All">Semua hasil</option>
+              <option value="ditandai">Ditandai · Warning</option>
+              <option value="tidak">Tidak ditandai</option>
+              <option value="luar">Di luar cakupan</option>
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -286,11 +300,12 @@ export default function DataQualityPage() {
               }}
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">Facility: All</option>
-              <option value="Jakarta">Jakarta Data Center</option>
-              <option value="Surabaya">Surabaya Core Hub</option>
-              <option value="Bandung">Bandung Facility</option>
-              <option value="Tower">Tower Infrastructure</option>
+              <option value="All">Laporan: semua</option>
+              {laporanList.map((l) => (
+                <option key={l} value={l}>
+                  {namaLaporan(l)}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -305,11 +320,12 @@ export default function DataQualityPage() {
               }}
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Violation Types</option>
-              <option value="missing_data">DQ-01: Missing Data</option>
-              <option value="unit_mismatch">DQ-02: Unit Mismatch</option>
-              <option value="unusual_increase">DQ-06: High Spike</option>
-              <option value="invalid_source">DQ-07: Invalid Source</option>
+              <option value="All">Semua kelompok</option>
+              {kelompokList.map((k) => (
+                <option key={k} value={k}>
+                  Kelompok {k}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -332,7 +348,7 @@ export default function DataQualityPage() {
               }}
               className="text-[12px] font-semibold text-[#b80035] hover:underline px-2 py-1"
             >
-              Clear filters
+              Hapus filter
             </button>
           )}
         </div>
@@ -344,31 +360,29 @@ export default function DataQualityPage() {
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">RECORD ID</th>
-                <th className="py-3 px-4">FACILITY / ASSET</th>
-                <th className="py-3 px-4">SCOPE</th>
-                <th className="py-3 px-4">PERIOD</th>
-                <th className="py-3 px-4">READING VALUE</th>
-                <th className="py-3 px-4">SEVERITY</th>
-                <th className="py-3 px-4">VIOLATION TYPE</th>
+                <th className="py-3 px-4">#</th>
+                <th className="py-3 px-4">PEMERIKSAAN</th>
+                <th className="py-3 px-4">LAPORAN</th>
+                <th className="py-3 px-4">HALAMAN</th>
+                <th className="py-3 px-4">TERTULIS</th>
+                <th className="py-3 px-4">HASIL</th>
+                <th className="py-3 px-4">ATURAN</th>
                 <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4 text-right">ACTION</th>
+                <th className="py-3 px-4 text-right">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-[#5c5e64]">
-                    No telemetry records match the selected filter criteria.
+                    Tidak ada pemeriksaan yang cocok dengan filter.
                   </td>
                 </tr>
               ) : (
                 paginated.map((record) => {
-                  const isError =
-                    record.validationStatus === "error" && !record.resolved;
-                  const isWarn =
-                    record.validationStatus === "warning" && !record.resolved;
-                  const isResolved = record.resolved;
+                  const isError = false;
+                  const isWarn = record.jenis === "ditandai";
+                  const isResolved = record.jenis === "luar";
 
                   return (
                     <tr
@@ -413,8 +427,8 @@ export default function DataQualityPage() {
                           }`}
                         >
                           {record.value === null
-                            ? "(Missing)"
-                            : record.value.toLocaleString()}
+                            ? KOSONG
+                            : fmtAngka(record.value)}
                         </div>
                         <div className="text-[11px] text-[#5c5e64]">
                           {record.unit}
@@ -435,19 +449,19 @@ export default function DataQualityPage() {
                           }`}
                         >
                           {isResolved
-                            ? "Resolved"
+                            ? "Di luar cakupan"
                             : isError
-                            ? "Critical"
+                            ? KOSONG
                             : isWarn
-                            ? "Warning"
-                            : "Valid"}
+                            ? "Ditandai · Warning"
+                            : "Tidak ditandai"}
                         </span>
                       </td>
 
                       {/* Violation Type */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <div className="text-[12px] text-[#0b1c30] truncate font-medium">
-                          {record.issueTitle || (isResolved ? "Resolved" : "Passes all tests")}
+                          {record.issueTitle || KOSONG}
                         </div>
                         {record.ruleId && (
                           <div className="text-[11px] text-[#5c5e64] font-mono">
@@ -459,7 +473,7 @@ export default function DataQualityPage() {
                       {/* Status */}
                       <td className="py-3.5 px-4">
                         <span className="text-[12px] font-semibold text-[#0b1c30]">
-                          {isResolved ? "Resolved" : isError ? "Open" : "Valid"}
+                          {isResolved ? KOSONG : isWarn ? "Perlu review" : "Lolos"}
                         </span>
                       </td>
 
@@ -473,7 +487,7 @@ export default function DataQualityPage() {
                           }}
                           className="px-3 py-1 rounded-[6px] text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors"
                         >
-                          Inspect
+                          Lihat detail
                         </button>
                       </td>
                     </tr>
@@ -487,11 +501,11 @@ export default function DataQualityPage() {
         {/* Table Pagination Footer */}
         <div className="p-4 bg-[#f8f9ff] border-t border-[#e5eeff] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#5c5e64]">
           <div>
-            Showing <strong className="text-[#0b1c30]">{(currentPage - 1) * pageSize + 1}</strong>–
+            Menampilkan <strong className="text-[#0b1c30]">{filtered.length ? (currentPage - 1) * pageSize + 1 : 0}</strong>–
             <strong className="text-[#0b1c30]">
               {Math.min(currentPage * pageSize, filtered.length)}
             </strong>{" "}
-            of <strong className="text-[#0b1c30]">{filtered.length}</strong> issues
+            dari <strong className="text-[#0b1c30]">{filtered.length}</strong> pemeriksaan
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -536,57 +550,57 @@ export default function DataQualityPage() {
         {/* Card 1: Findings by Issue Type */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-3.5">
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-            Findings by Issue Type
+            Temuan per jenis masalah
           </h3>
 
           <div className="space-y-3 pt-1 text-[12px]">
             <div>
               <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
-                <span>Missing Consumption Data</span>
-                <span className="font-bold">8 (33%)</span>
+                <span>Spesifikasi</span>
+                <span className="font-bold">—</span>
               </div>
               <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                <div className="bg-[#b80035] h-full" style={{ width: "33%" }} />
+                <div className="bg-[#b80035] h-full" style={{ width: "0%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
-                <span>Factor Mismatch / Outdated</span>
-                <span className="font-bold">6 (25%)</span>
+                <span>—</span>
+                <span className="font-bold">—</span>
               </div>
               <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                <div className="bg-[#d97706] h-full" style={{ width: "25%" }} />
+                <div className="bg-[#d97706] h-full" style={{ width: "0%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
-                <span>Unusual Spike (&gt;30% YoY)</span>
-                <span className="font-bold">5 (21%)</span>
+                <span>—</span>
+                <span className="font-bold">—</span>
               </div>
               <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                <div className="bg-[#f59e0b] h-full" style={{ width: "21%" }} />
+                <div className="bg-[#f59e0b] h-full" style={{ width: "0%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
-                <span>Boundary Inconsistency</span>
-                <span className="font-bold">3 (13%)</span>
+                <span>—</span>
+                <span className="font-bold">—</span>
               </div>
               <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                <div className="bg-[#facc15] h-full" style={{ width: "13%" }} />
+                <div className="bg-[#facc15] h-full" style={{ width: "0%" }} />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
-                <span>Duplicate Ingestion</span>
-                <span className="font-bold">2 (8%)</span>
+                <span>—</span>
+                <span className="font-bold">—</span>
               </div>
               <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                <div className="bg-[#94a3b8] h-full" style={{ width: "8%" }} />
+                <div className="bg-[#94a3b8] h-full" style={{ width: "0%" }} />
               </div>
             </div>
           </div>
@@ -596,7 +610,7 @@ export default function DataQualityPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div>
             <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Findings by Scope
+              Temuan per scope
             </h3>
 
             {/* Scope Visual Breakdown */}
@@ -607,10 +621,10 @@ export default function DataQualityPage() {
                   style={{ transform: "rotate(45deg)" }}
                 />
                 <span className="text-[10px] font-bold text-[#5c5e64] uppercase tracking-wider">
-                  TOTAL
+                  —
                 </span>
-                <span className="text-[22px] font-bold text-[#0b1c30]">24</span>
-                <span className="text-[10px] text-[#5c5e64]">Findings</span>
+                <span className="text-[22px] font-bold text-[#0b1c30]">—</span>
+                <span className="text-[10px] text-[#5c5e64]">Spesifikasi</span>
               </div>
             </div>
 
@@ -618,23 +632,23 @@ export default function DataQualityPage() {
               <div className="flex items-center justify-between p-2 rounded-[8px] bg-[#eff4ff]">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-[3px] bg-[#b80035]" />
-                  <span className="font-medium text-[#0b1c30]">Scope 2 (Electricity)</span>
+                  <span className="font-medium text-[#0b1c30]">—</span>
                 </div>
-                <span className="font-bold text-[#0b1c30]">18 (75%)</span>
+                <span className="font-bold text-[#0b1c30]">—</span>
               </div>
 
               <div className="flex items-center justify-between p-2 rounded-[8px] bg-[#eff4ff]">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-[3px] bg-[#ffb3b6]" />
-                  <span className="font-medium text-[#0b1c30]">Scope 1 (Direct Fuel)</span>
+                  <span className="font-medium text-[#0b1c30]">—</span>
                 </div>
-                <span className="font-bold text-[#0b1c30]">6 (25%)</span>
+                <span className="font-bold text-[#0b1c30]">—</span>
               </div>
             </div>
           </div>
 
           <div className="text-[11px] text-[#5c5e64] pt-3 border-t border-[#f1f5f9]">
-            75% of data quality risks stem from regional electricity utility telemetry.
+            —
           </div>
         </div>
 
@@ -643,7 +657,7 @@ export default function DataQualityPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-                Recent Resolved Findings
+                Temuan terselesaikan
               </h3>
               <FileCheck className="w-4 h-4 text-[#00675e]" />
             </div>
@@ -652,55 +666,63 @@ export default function DataQualityPage() {
               {/* Item 1 */}
               <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-[#0b1c30]">REC-2024-8841</span>
-                  <span className="text-[10px] text-[#5c5e64]">2h ago</span>
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
                 </div>
                 <p className="text-[#0b1c30] font-medium mt-1">
-                  Solar generation offset calibrated (+14.2 MWh)
+                  Spesifikasi
                 </p>
                 <p className="text-[11px] text-[#5c5e64] mt-0.5">
-                  Verified by M. Dewi • Ref: INV-2025-01
+                  —
                 </p>
               </div>
 
               {/* Item 2 */}
               <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-[#0b1c30]">REC-2024-6019</span>
-                  <span className="text-[10px] text-[#5c5e64]">5h ago</span>
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
                 </div>
                 <p className="text-[#0b1c30] font-medium mt-1">
-                  Generator diesel invoice attached
+                  —
                 </p>
                 <p className="text-[11px] text-[#5c5e64] mt-0.5">
-                  Verified by A. Santoso • Ref: PO-GEN-899
+                  —
                 </p>
               </div>
 
               {/* Item 3 */}
               <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-[#0b1c30]">REC-2024-4112</span>
-                  <span className="text-[10px] text-[#5c5e64]">1d ago</span>
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
                 </div>
                 <p className="text-[#0b1c30] font-medium mt-1">
-                  Grid factor updated to 0.761 kgCO₂e/kWh
+                  —
                 </p>
                 <p className="text-[11px] text-[#5c5e64] mt-0.5">
-                  Verified by System Automation (MEMR #189)
+                  —
                 </p>
               </div>
             </div>
           </div>
 
           <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-[11px]">
-            <span className="text-[#5c5e64]">Immutable log</span>
-            <Link href="/governance" className="text-[#b80035] font-semibold hover:underline">
-              View Audit Trail →
+            <span className="text-[#5c5e64]">—</span>
+            <Link href="/governance" title="Spesifikasi" className="text-[#b80035] font-semibold hover:underline">
+              Governance & Jejak Perubahan →
             </Link>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DataQualityPage() {
+  return (
+    <Suspense fallback={null}>
+      <DataQualityContent />
+    </Suspense>
   );
 }
