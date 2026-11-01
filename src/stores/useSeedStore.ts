@@ -10,6 +10,7 @@ import {
   statusAwal,
   LABEL_STATUS,
 } from "@/lib/reconciliation";
+import { Peristiwa, MasukanPeristiwa, tambahPeristiwa } from "@/lib/log";
 
 interface HasilJalan {
   hasil: HasilCek[];
@@ -37,9 +38,13 @@ interface TeraState {
   alasanVersi: Record<string, string>;
   baselineAktif: string | null;
 
+  // Log peristiwa (memori saja; hilang saat halaman dimuat ulang)
+  peristiwa: Peristiwa[];
+  catat: (m: MasukanPeristiwa) => void;
+
   setActivePeriod: (period: string) => void;
 
-  jalankanAturanDQ: () => void;
+  jalankanAturanDQ: (alasan?: string) => void;
   bukaCek: (no: number) => void;
   closeDrawer: () => void;
 
@@ -63,12 +68,24 @@ export const useSeedStore = create<TeraState>((set, get) => ({
   alasanVersi: {},
   baselineAktif: null,
 
+  peristiwa: [],
+  catat: (m) => set((s) => ({ peristiwa: tambahPeristiwa(s.peristiwa, m, new Date().toISOString()) })),
+
   setActivePeriod: (period) => set({ activePeriod: period }),
 
   // Menjalankan aturan α dan β di sisi klien terhadap 32 pemeriksaan dari seed.
-  jalankanAturanDQ: () => {
+  jalankanAturanDQ: (alasan) => {
+    const sebelum = get().hasilAturan;
     const { hasil, ringkasan } = jalankanAturan(SEED.cek_32);
     set({ hasilAturan: { hasil, ringkasan, waktu: new Date().toISOString() } });
+    get().catat({
+      aksi: "aturan",
+      objek: `${SEED.cek_32.length} pemeriksaan (aturan α/β)`,
+      sebelum: sebelum ? `${sebelum.ringkasan.ditandai.length} ditandai` : "Belum dijalankan",
+      sesudah: `${ringkasan.ditandai.length} ditandai dari ${ringkasan.tercakup}`,
+      alasan: typeof alasan === "string" ? alasan : "Dijalankan saat halaman dibuka",
+      bukti: "Berkas pemeriksaan D6",
+    });
   },
   bukaCek: (no) => set({ cekTerpilih: no, isDrawerOpen: true }),
   closeDrawer: () => set({ isDrawerOpen: false }),
@@ -93,6 +110,14 @@ export const useSeedStore = create<TeraState>((set, get) => ({
       // Hanya Approved yang menetapkan baseline aktif; Rejected tidak mengubahnya.
       baselineAktif: berikut === "approved" ? versi : baselineAktif,
     });
+    get().catat({
+      aksi: aksi,
+      objek: `Versi baseline ${versi}`,
+      sebelum: LABEL_STATUS[sekarang],
+      sesudah: LABEL_STATUS[berikut],
+      alasan: alasan.trim(),
+      bukti: VERSI.find((v) => v.versi === versi)?.sumber ?? "—",
+    });
     const pesan =
       berikut === "approved"
         ? `${versi} disetujui (simulasi) dan ditetapkan sebagai baseline aktif (simulasi).`
@@ -102,5 +127,16 @@ export const useSeedStore = create<TeraState>((set, get) => ({
     return { ok: true, pesan };
   },
 
-  resetSimulasi: () => set({ statusVersi: statusAwal(), alasanVersi: {}, baselineAktif: null }),
+  resetSimulasi: () => {
+    const { statusVersi, baselineAktif } = get();
+    set({ statusVersi: statusAwal(), alasanVersi: {}, baselineAktif: null });
+    get().catat({
+      aksi: "reset",
+      objek: `${VERSI.length} versi baseline`,
+      sebelum: `${VERSI.map((v) => `${v.versi}: ${LABEL_STATUS[statusVersi[v.versi]]}`).join(", ")}; aktif: ${baselineAktif ?? "belum ada"}`,
+      sesudah: "Semua Draft; aktif: belum ada",
+      alasan: "Reset simulasi",
+      bukti: "—",
+    });
+  },
 }));

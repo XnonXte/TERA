@@ -16,14 +16,54 @@ import {
   Hash,
   ExternalLink,
 } from "lucide-react";
-import { LogEvent } from "@/types/tera";
+import { LogEvent, LogAction } from "@/types/tera";
+import { useSeedStore } from "@/stores/useSeedStore";
+import { LABEL_PERISTIWA, JenisPeristiwa, PELAKU, Peristiwa } from "@/lib/log";
+import { fmtWaktu, KOSONG } from "@/lib/format";
 
-// Halaman spesifikasi: belum ada log aktivitas di prototipe ini.
 const SPESIFIKASI = "Spesifikasi";
-const D = "—";
+const SIMULASI = "Simulasi";
+const D = KOSONG;
+// Kode warna badge aksi pada desain asli.
+const WARNA_AKSI: Record<JenisPeristiwa, LogAction> = {
+  aturan: "review",
+  ajukan: "update",
+  setujui: "approve",
+  tolak: "reject",
+  reset: "update",
+  skenario: "simulate",
+};
+const inisial = (nama: string) => nama.split(" ").map((k) => k[0]?.toUpperCase()).join("");
+const PERAN_TERSEDIA = [PELAKU];
 
 export default function GovernancePage() {
-  const logEvents: LogEvent[] = [];
+  const { peristiwa, statusVersi } = useSeedStore();
+  const [dipilih, setDipilih] = useState<string | null>(null);
+
+  // KPI dihitung dari log dan status simulasi
+  const daftarStatus = Object.values(statusVersi);
+  const jumlahPending = daftarStatus.filter((s) => s === "pending_review").length;
+  const jumlahApproved = daftarStatus.filter((s) => s === "approved").length;
+  const jumlahRejected = daftarStatus.filter((s) => s === "rejected").length;
+
+  // Peristiwa → bentuk baris yang dipakai tabel desain (terbaru di atas)
+  const keBaris = (x: Peristiwa): LogEvent => ({
+    id: x.id,
+    timestamp: `${x.id} · ${fmtWaktu(x.waktu)}`,
+    actor: x.pelaku,
+    actorRole: x.peran,
+    actorInitials: inisial(x.pelaku),
+    action: WARNA_AKSI[x.aksi],
+    objectType: x.aksi === "skenario" ? "scenario" : x.aksi === "aturan" ? "record" : "baseline",
+    objectId: x.id,
+    objectTitle: `${x.objek} · ${x.sebelum} → ${x.sesudah}`,
+    previousValue: x.sebelum,
+    newValue: x.sesudah,
+    reason: x.alasan,
+    evidence: x.bukti,
+    hash: x.bukti,
+    statusBadge: LABEL_PERISTIWA[x.aksi],
+  });
 
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("All");
@@ -32,22 +72,18 @@ export default function GovernancePage() {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   const filteredEvents = useMemo(() => {
-    return logEvents.filter((ev) => {
-      if (filterAction !== "All" && ev.action !== filterAction) return false;
-      if (filterObject !== "All" && ev.objectType !== filterObject) return false;
-
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        const matchActor = ev.actor.toLowerCase().includes(q);
-        const matchTitle = ev.objectTitle.toLowerCase().includes(q);
-        const matchId = ev.objectId.toLowerCase().includes(q);
-        const matchHash = (ev.hash || "").toLowerCase().includes(q);
-        if (!matchActor && !matchTitle && !matchId && !matchHash) return false;
-      }
-
-      return true;
-    });
-  }, [logEvents, filterAction, filterObject, search]);
+    const q = search.trim().toLowerCase();
+    return [...peristiwa]
+      .reverse()
+      .filter((x) => {
+        if (filterAction !== "All" && x.aksi !== filterAction) return false;
+        if (filterObject !== "All" && x.pelaku !== filterObject) return false;
+        if (q && !`${x.id} ${x.objek} ${x.bukti}`.toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .map(keBaris);
+  }, [peristiwa, filterAction, filterObject, search]);
+  const terpilih = peristiwa.find((x) => x.id === dipilih) ?? peristiwa[peristiwa.length - 1];
 
   const copyToClipboard = (hash?: string) => {
     if (!hash) return;
@@ -74,7 +110,7 @@ export default function GovernancePage() {
             Governance &amp; Jejak Perubahan
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Mencatat aktivitas dan keputusan.
+            Mencatat aksi yang dilakukan di prototipe ini: aturan dijalankan, persetujuan simulasi, dan skenario disimpan.
           </p>
         </div>
 
@@ -121,11 +157,11 @@ export default function GovernancePage() {
               Total peristiwa
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {peristiwa.length}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            {SPESIFIKASI}
+            {SIMULASI} · hilang saat halaman dimuat ulang
           </div>
         </div>
 
@@ -136,11 +172,11 @@ export default function GovernancePage() {
               Menunggu review
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {jumlahPending}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64] truncate">
-            {SPESIFIKASI}
+            {SIMULASI} · versi berstatus Pending Review
           </div>
         </div>
 
@@ -151,11 +187,11 @@ export default function GovernancePage() {
               Perubahan disetujui
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {jumlahApproved}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            {SPESIFIKASI}
+            {SIMULASI} · versi berstatus Approved
           </div>
         </div>
 
@@ -166,11 +202,11 @@ export default function GovernancePage() {
               Riwayat persetujuan
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {jumlahApproved + jumlahRejected}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            {SPESIFIKASI}
+            {SIMULASI} · disetujui {jumlahApproved}, ditolak {jumlahRejected}
           </div>
         </div>
       </div>
@@ -183,9 +219,8 @@ export default function GovernancePage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            disabled
-            title={SPESIFIKASI}
-            placeholder="Cari…"
+            aria-label="Cari ID peristiwa atau objek"
+            placeholder="Cari ID peristiwa atau objek…"
             className="w-full h-10 pl-9 pr-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all"
           />
         </div>
@@ -196,15 +231,15 @@ export default function GovernancePage() {
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              disabled
-              title={SPESIFIKASI}
+              aria-label="Jenis peristiwa"
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
               <option value="All">Semua jenis peristiwa</option>
-              <option value="approve">Setujui</option>
-              <option value="reject">Tolak</option>
-              <option value="update">Perbarui</option>
-              <option value="simulate">Simulasi</option>
+              {(Object.keys(LABEL_PERISTIWA) as JenisPeristiwa[]).map((k) => (
+                <option key={k} value={k}>
+                  {LABEL_PERISTIWA[k]}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -214,14 +249,15 @@ export default function GovernancePage() {
             <select
               value={filterObject}
               onChange={(e) => setFilterObject(e.target.value)}
-              disabled
-              title={SPESIFIKASI}
+              aria-label="Peran"
               className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">Semua objek</option>
-              <option value="baseline">Versi baseline</option>
-              <option value="record">Pemeriksaan</option>
-              <option value="scenario">Skenario</option>
+              <option value="All">Semua peran</option>
+              {PERAN_TERSEDIA.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -270,11 +306,11 @@ export default function GovernancePage() {
                 Tabel log aktivitas
               </h3>
               <p className="text-[12px] text-[#5c5e64] mt-0.5">
-                {SPESIFIKASI}
+                Klik baris untuk melihat detail
               </p>
             </div>
             <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
-              {D} peristiwa
+              {SIMULASI} · {filteredEvents.length} peristiwa
             </span>
           </div>
 
@@ -291,7 +327,7 @@ export default function GovernancePage() {
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
                 {filteredEvents.map((ev) => (
-                  <tr key={ev.id} className="hover:bg-[#f8f9ff] transition-colors">
+                  <tr key={ev.id} onClick={() => setDipilih(ev.objectId)} className="hover:bg-[#f8f9ff] transition-colors">
                     {/* Timestamp */}
                     <td className="py-3.5 px-4 text-[#5c5e64] text-[12px] whitespace-nowrap">
                       {ev.timestamp}
@@ -327,7 +363,7 @@ export default function GovernancePage() {
                             : "bg-[#e5eeff] text-[#0b1c30]"
                         }`}
                       >
-                        {ev.action}
+                        {ev.statusBadge}
                       </span>
                     </td>
 
@@ -350,7 +386,7 @@ export default function GovernancePage() {
                         className="font-mono text-[11px] text-[#5c5e64] hover:text-[#b80035] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff] flex items-center gap-1.5 transition-colors"
                       >
                         <Hash className="w-3 h-3 text-[#5c5e64]" />
-                        <span>{ev.hash ? `${ev.hash.slice(0, 10)}…` : D}</span>
+                        <span>{ev.hash || D}</span>
                         {copiedHash === ev.hash && (
                           <span className="text-[9px] text-[#00675e] font-bold">Tersalin</span>
                         )}
@@ -369,7 +405,7 @@ export default function GovernancePage() {
           <div className="bg-white rounded-[12px] border border-[#e5eeff] p-5 shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#e5eeff]">
               <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-                Riwayat persetujuan
+                Detail peristiwa
               </h3>
               <ShieldCheck className="w-4 h-4 text-[#00675e]" />
             </div>
@@ -384,12 +420,12 @@ export default function GovernancePage() {
                 <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#0b1c30]">
-                      {SPESIFIKASI}
+                      {terpilih ? terpilih.id : D}
                     </span>
-                    <span className="text-[10px] text-[#00675e] font-semibold">{D}</span>
+                    <span className="text-[10px] text-[#00675e] font-semibold">{terpilih ? LABEL_PERISTIWA[terpilih.aksi] : D}</span>
                   </div>
-                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{D}</p>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? fmtWaktu(terpilih.waktu) : D}</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? `${terpilih.pelaku} · ${terpilih.peran}` : D}</p>
                 </div>
               </div>
 
@@ -401,12 +437,12 @@ export default function GovernancePage() {
                 <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#0b1c30]">
-                      {D}
+                      Objek
                     </span>
-                    <span className="text-[10px] text-[#00675e] font-semibold">{D}</span>
+                    <span className="text-[10px] text-[#00675e] font-semibold">{SIMULASI}</span>
                   </div>
-                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{D}</p>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? terpilih.objek : D}</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? LABEL_PERISTIWA[terpilih.aksi] : D}</p>
                 </div>
               </div>
 
@@ -418,12 +454,12 @@ export default function GovernancePage() {
                 <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#0b1c30]">
-                      {D}
+                      Status sebelum → sesudah
                     </span>
-                    <span className="text-[10px] text-[#00675e] font-semibold">{D}</span>
+                    <span className="text-[10px] text-[#00675e] font-semibold">{SIMULASI}</span>
                   </div>
-                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{D}</p>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? `${terpilih.sebelum} → ${terpilih.sesudah}` : D}</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{SIMULASI}</p>
                 </div>
               </div>
 
@@ -435,12 +471,12 @@ export default function GovernancePage() {
                 <div className="flex-1 bg-[#fffbeb] p-3 rounded-[8px] border border-[#fef3c7]">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#78350f]">
-                      {D}
+                      Alasan dan bukti
                     </span>
-                    <span className="text-[10px] text-[#d97706] font-bold">{D}</span>
+                    <span className="text-[10px] text-[#d97706] font-bold">{SIMULASI}</span>
                   </div>
-                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{D}</p>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? terpilih.alasan || D : D}</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? `Bukti: ${terpilih.bukti}` : D}</p>
                 </div>
               </div>
             </div>
@@ -455,11 +491,11 @@ export default function GovernancePage() {
               </h4>
             </div>
             <p className="text-[11px] text-[#5c5e64] leading-relaxed">
-              {SPESIFIKASI}: <strong>{D}</strong> {D}
+              Peran disimulasikan: <strong>{PELAKU}</strong>. Tanpa login dan tanpa pemisahan peran.
             </p>
             <div className="text-[10px] text-[#5c5e64] pt-2 border-t border-[#dce9ff] flex items-center justify-between">
-              <span>{D}</span>
-              <span className="text-[#00675e] font-semibold">{D}</span>
+              <span>Tanpa login</span>
+              <span className="text-[#00675e] font-semibold">{SIMULASI}</span>
             </div>
           </div>
         </div>

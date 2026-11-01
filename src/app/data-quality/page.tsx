@@ -114,7 +114,7 @@ function DataQualityContent() {
   }, [records, activeFilterScope, activeFilterStatus, selectedFacility, activeFilterIssueType, search]);
 
   const openDrawer = (record: { no: number }) => bukaCek(record.no);
-  const runValidation = jalankanAturanDQ;
+  const runValidation = () => jalankanAturanDQ("Diklik pengguna");
 
   // Paginated records
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
