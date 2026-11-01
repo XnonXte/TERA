@@ -482,7 +482,7 @@ export default function GovernancePage() {
             </div>
           </div>
 
-          {/* Active ISO Certification Box */}
+          {/* Kotak ringkasan peran */}
           <div className="bg-[#eff4ff] rounded-[12px] p-5 border border-[#dce9ff] space-y-2">
             <div className="flex items-center gap-2 text-[#0b1c30]">
               <Award className="w-4 h-4 text-[#00675e]" />

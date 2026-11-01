@@ -39,7 +39,7 @@ const SKENARIO_AWAL: Skenario[] = SKENARIO_AWAL_PERSEN_SCOPE2.map((r2, i) => ({
 interface HasilJalan {
   hasil: HasilCek[];
   ringkasan: RingkasanAturan;
-  waktu: string; // ISO, waktu eksekusi di browser
+  waktu: string; // string toISOString(), waktu eksekusi di browser
 }
 
 export interface HasilAksi {

@@ -17,7 +17,7 @@ export const PERAN = "Peran disimulasikan";
 
 export interface Peristiwa {
   id: string; // EVT-001, EVT-002, ...
-  waktu: string; // ISO, waktu browser
+  waktu: string; // string toISOString(), waktu browser
   pelaku: string;
   peran: string;
   aksi: JenisPeristiwa;

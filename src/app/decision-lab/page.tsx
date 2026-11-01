@@ -149,7 +149,7 @@ export default function DecisionLabPage() {
 
       {/* 3. 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Selected Abatement */}
+        {/* Kartu 1: pengurangan emisi */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
@@ -194,7 +194,7 @@ export default function DecisionLabPage() {
           </div>
         </div>
 
-        {/* Card 4: Blended Abatement Cost */}
+        {/* Kartu 4: gap tertutup */}
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
