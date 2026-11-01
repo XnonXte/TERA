@@ -31,11 +31,11 @@ export default function CostEffectivenessChart({
               Grafik efektivitas biaya
             </h3>
             <span className="text-[11px] font-bold bg-[#eff4ff] text-[#00675e] px-2.5 py-0.5 rounded-full border border-[#dce9ff]">
-              Spesifikasi
+              Hipotetis
             </span>
           </div>
           <p className="text-[12px] text-[#5c5e64] mt-0.5">
-            —
+            Biaya implementasi dibagi pengurangan emisi hipotetis per skenario
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function CostEffectivenessChart({
         <div className="flex items-center gap-2 bg-[#fff1f2] border border-[#ffdad6] px-3 py-1.5 rounded-[8px] text-[11px]">
           <span className="w-2.5 h-0.5 bg-[#b80035] border-t-2 border-dashed border-[#b80035]" />
           <span className="text-[#5c5e64]">
-            Batas harga karbon internal: <strong className="text-[#b80035]">—</strong>
+            Biaya per tCO₂e: <strong className="text-[#b80035]">hanya bila biaya terisi</strong>
           </span>
         </div>
       </div>
@@ -143,10 +143,10 @@ export default function CostEffectivenessChart({
         {options.some((o) => o.costEffectiveness === null) && (
           <div className="p-3 bg-[#fffbeb] border border-[#fef3c7] rounded-[8px] flex items-center justify-between text-[11px] text-[#78350f]">
             <span className="font-bold">
-              —
+              Isi biaya skenario untuk menghitung
             </span>
             <span>
-              —
+              Belum ada skenario dengan biaya terisi
             </span>
           </div>
         )}

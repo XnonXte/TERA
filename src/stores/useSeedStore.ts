@@ -11,6 +11,30 @@ import {
   LABEL_STATUS,
 } from "@/lib/reconciliation";
 import { Peristiwa, MasukanPeristiwa, tambahPeristiwa } from "@/lib/log";
+import { SKENARIO_AWAL_PERSEN_SCOPE2, LABEL_HIPOTETIS } from "@/lib/keputusan";
+
+export interface Skenario {
+  id: string;
+  nama: string;
+  persenScope2: number;
+  persenScope1: number;
+  biaya: number | null; // belum ada kontrol input pada desain
+  waktu: number | null;
+  dipilih: boolean;
+}
+
+const LEBAR_ID_SKENARIO = 2;
+const idSkenario = (i: number) => `S-${String(i).padStart(LEBAR_ID_SKENARIO, "0")}`;
+const namaSkenario = (r2: number, r1: number) => `${LABEL_HIPOTETIS}: Scope 2 −${r2}%, Scope 1 −${r1}%`;
+const SKENARIO_AWAL: Skenario[] = SKENARIO_AWAL_PERSEN_SCOPE2.map((r2, i) => ({
+  id: idSkenario(i + 1),
+  nama: namaSkenario(r2, 0),
+  persenScope2: r2,
+  persenScope1: 0,
+  biaya: null,
+  waktu: null,
+  dipilih: false,
+}));
 
 interface HasilJalan {
   hasil: HasilCek[];
@@ -42,6 +66,11 @@ interface TeraState {
   peristiwa: Peristiwa[];
   catat: (m: MasukanPeristiwa) => void;
 
+  // Decision Lab (hipotetis)
+  skenario: Skenario[];
+  simpanSkenario: (persenScope2: number, persenScope1: number) => Skenario;
+  pilihSkenario: (id: string) => void;
+
   setActivePeriod: (period: string) => void;
 
   jalankanAturanDQ: (alasan?: string) => void;
@@ -69,6 +98,31 @@ export const useSeedStore = create<TeraState>((set, get) => ({
   baselineAktif: null,
 
   peristiwa: [],
+  skenario: SKENARIO_AWAL,
+  simpanSkenario: (r2, r1) => {
+    const { skenario } = get();
+    const baru: Skenario = {
+      id: idSkenario(skenario.length + 1),
+      nama: namaSkenario(r2, r1),
+      persenScope2: r2,
+      persenScope1: r1,
+      biaya: null,
+      waktu: null,
+      dipilih: false,
+    };
+    set({ skenario: [...skenario, baru] });
+    get().catat({
+      aksi: "skenario",
+      objek: `Skenario ${baru.id}`,
+      sebelum: `${skenario.length} skenario`,
+      sesudah: `${skenario.length + 1} skenario`,
+      alasan: baru.nama,
+      bukti: "—",
+    });
+    return baru;
+  },
+  pilihSkenario: (id) =>
+    set((s) => ({ skenario: s.skenario.map((x) => (x.id === id ? { ...x, dipilih: !x.dipilih } : x)) })),
   catat: (m) => set((s) => ({ peristiwa: tambahPeristiwa(s.peristiwa, m, new Date().toISOString()) })),
 
   setActivePeriod: (period) => set({ activePeriod: period }),

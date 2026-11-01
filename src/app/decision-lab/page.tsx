@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FlaskConical,
@@ -14,18 +14,75 @@ import {
 } from "lucide-react";
 import CostEffectivenessChart from "@/components/charts/CostEffectivenessChart";
 import { DecarbonizationOption } from "@/types/tera";
+import { useSeedStore } from "@/stores/useSeedStore";
+import { hitungSkenario, urutkanSkenario, HasilSkenario } from "@/lib/hitung-keputusan";
+import {
+  BASELINE,
+  GAP_AWAL,
+  STATUS_TARGET,
+  SUMBER_BASELINE,
+  TAHUN_BASELINE,
+  SATUAN,
+  RENTANG,
+  PENANDA,
+  DURASI_NOTIFIKASI_MS,
+  LABEL_HIPOTETIS,
+} from "@/lib/keputusan";
+import { fmtAngka, fmtPersen, KOSONG } from "@/lib/format";
 
-// Halaman spesifikasi: belum ada data opsi intervensi di seed.
-const SPESIFIKASI = "Spesifikasi";
-const D = "—";
+const D = KOSONG;
+const HIPOTETIS = LABEL_HIPOTETIS;
+const persen = (x: number) => `${x}%`;
+const ton = (x: number | null | undefined) => (x === null || x === undefined ? D : `${fmtAngka(x)} ${SATUAN}`);
 
 export default function DecisionLabPage() {
-  const options: DecarbonizationOption[] = [];
-  const toggleOption = (id: string) => void id;
-  const [notification] = useState("");
-  const selectedOptions = options.filter((o) => o.selected);
-  const handleSaveScenario = () => undefined;
-  const handleReset = () => undefined;
+  const { skenario, simpanSkenario, pilihSkenario } = useSeedStore();
+  const [persenScope2, setPersenScope2] = useState(RENTANG.min);
+  const [persenScope1, setPersenScope1] = useState(RENTANG.min);
+  const [notification, setNotification] = useState("");
+
+  // Hasil parameter yang sedang diatur di slider
+  const hasil = hitungSkenario(BASELINE, { persenScope2, persenScope1, biaya: null, waktu: null });
+
+  // Skenario tersimpan → bentuk kartu/tabel desain, diurutkan dari pengurangan hipotetis terbesar
+  const daftar = useMemo(
+    () =>
+      urutkanSkenario(
+        skenario.map((s) => ({
+          s,
+          hasil: hitungSkenario(BASELINE, { persenScope2: s.persenScope2, persenScope1: s.persenScope1, biaya: s.biaya, waktu: s.waktu }),
+        }))
+      ),
+    [skenario]
+  );
+  const hasilById = new Map<string, HasilSkenario>(daftar.map((x) => [x.s.id, x.hasil]));
+  const options: DecarbonizationOption[] = daftar.map(({ s, hasil: h }) => ({
+    id: s.id,
+    code: s.id,
+    tag: HIPOTETIS,
+    name: s.nama,
+    description: `Scope 2 −${persen(s.persenScope2)} · Scope 1 −${persen(s.persenScope1)} dari baseline FY ${TAHUN_BASELINE}`,
+    reductionTco2e: h.pengurangan,
+    implementationCostIdr: s.biaya,
+    annualOperatingCostIdr: null,
+    costEffectiveness: h.biayaPerTon,
+    implementationMonths: s.waktu,
+    feasibility: "unknown",
+    evidenceStatus: "unresolved",
+    assumptions: [],
+    sourceRefs: [SUMBER_BASELINE],
+    selected: s.dipilih,
+  }));
+  const toggleOption = (id: string) => pilihSkenario(id);
+  const handleSaveScenario = () => {
+    const baru = simpanSkenario(persenScope2, persenScope1);
+    setNotification(`${baru.id} disimpan: ${baru.nama}`);
+    setTimeout(() => setNotification(""), DURASI_NOTIFIKASI_MS);
+  };
+  const handleReset = () => {
+    setPersenScope2(RENTANG.min);
+    setPersenScope1(RENTANG.min);
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -45,7 +102,7 @@ export default function DecisionLabPage() {
             Decision Lab
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Membandingkan alternatif dekarbonisasi berdasarkan emisi, biaya, dan kelayakan.
+            Kalkulator hipotetis di atas baseline FY {TAHUN_BASELINE} dari laporan; membandingkan skenario pengurangan emisi.
           </p>
         </div>
 
@@ -53,15 +110,13 @@ export default function DecisionLabPage() {
           {/* Simulative Mode Badge */}
           <div className="flex items-center gap-2 bg-[#fffbeb] border border-[#fef3c7] px-3 py-2 rounded-[8px] text-[12px] font-semibold text-[#b45309]">
             <FlaskConical className="w-4 h-4 text-[#d97706]" />
-            <span>Spesifikasi</span>
+            <span>{HIPOTETIS}</span>
             <span className="w-2 h-2 rounded-full bg-[#d97706] animate-pulse" />
           </div>
 
           <button
             type="button"
             onClick={handleReset}
-            disabled
-            title={SPESIFIKASI}
             className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
           >
             <RotateCcw className="w-4 h-4 text-[#5c5e64]" />
@@ -71,8 +126,6 @@ export default function DecisionLabPage() {
           <button
             type="button"
             onClick={handleSaveScenario}
-            disabled
-            title={SPESIFIKASI}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#b80035] rounded-[8px] text-[13px] font-semibold text-white hover:bg-[#9f002d] transition-colors shadow-sm"
           >
             <BookmarkCheck className="w-4 h-4" />
@@ -89,7 +142,7 @@ export default function DecisionLabPage() {
             <span>{notification}</span>
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider">
-            {D}
+            Tercatat di log
           </span>
         </div>
       )}
@@ -100,14 +153,14 @@ export default function DecisionLabPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Estimasi pengurangan emisi
+              Pengurangan emisi ({SATUAN})
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtAngka(hasil.pengurangan)}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            {SPESIFIKASI}
+            {HIPOTETIS} · Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}
           </div>
         </div>
 
@@ -115,14 +168,14 @@ export default function DecisionLabPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Biaya implementasi
+              Emisi sesudah ({SATUAN})
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtAngka(hasil.emisiSesudah)}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            {SPESIFIKASI}
+            Baseline FY {TAHUN_BASELINE}: {fmtAngka(BASELINE.total)} · {SUMBER_BASELINE}
           </div>
         </div>
 
@@ -130,14 +183,14 @@ export default function DecisionLabPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Biaya operasional tahunan
+              Sisa gap terhadap level target
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtAngka(hasil.sisaGap)}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            {SPESIFIKASI}
+            Level target {fmtAngka(BASELINE.target)} ({STATUS_TARGET}); gap awal {fmtAngka(GAP_AWAL)}
           </div>
         </div>
 
@@ -145,14 +198,14 @@ export default function DecisionLabPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Estimasi waktu implementasi
+              Gap tertutup
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {D}
+              {fmtPersen(hasil.persenGapTertutup, 1, false)}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            {SPESIFIKASI}
+            Biaya per {SATUAN}: {hasil.biayaPerTon === null ? D : fmtAngka(hasil.biayaPerTon)}
           </div>
         </div>
       </div>
@@ -163,11 +216,11 @@ export default function DecisionLabPage() {
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-[#b80035]" />
             <h3 className="text-[14px] font-bold text-[#0b1c30]">
-              Konteks keputusan
+              Parameter skenario
             </h3>
           </div>
           <span className="text-[11px] font-semibold text-[#5c5e64]">
-            {SPESIFIKASI}
+            {HIPOTETIS}
           </span>
         </div>
 
@@ -176,27 +229,26 @@ export default function DecisionLabPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[12px]">
               <span className="font-semibold text-[#0b1c30]">
-                Sensitivitas biaya investasi:
+                Pengurangan Scope 2:
               </span>
               <span className="font-bold text-[#b80035] bg-[#fff1f2] px-2.5 py-0.5 rounded border border-[#ffdad6]">
-                {D}
+                −{persen(persenScope2)}
               </span>
             </div>
             <input
               type="range"
-              min="0.8"
-              max="1.5"
-              step="0.05"
-              value={1}
-              disabled
-              title={SPESIFIKASI}
-              onChange={() => undefined}
+              min={RENTANG.min}
+              max={RENTANG.max}
+              step={RENTANG.langkah}
+              value={persenScope2}
+              aria-label="Pengurangan Scope 2 (%)"
+              onChange={(e) => setPersenScope2(Number(e.target.value))}
               className="w-full accent-[#b80035] cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-[#5c5e64]">
-              <span>{D}</span>
-              <span>{D}</span>
-              <span>{D}</span>
+              <span>{persen(PENANDA[0])}</span>
+              <span>{persen(PENANDA[1])}</span>
+              <span>{persen(PENANDA[2])}</span>
             </div>
           </div>
 
@@ -204,27 +256,26 @@ export default function DecisionLabPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[12px]">
               <span className="font-semibold text-[#0b1c30]">
-                Kenaikan tarif listrik:
+                Pengurangan Scope 1:
               </span>
               <span className="font-bold text-[#00675e] bg-[#ecfdf5] px-2.5 py-0.5 rounded border border-[#a7f3d0]">
-                {D}
+                −{persen(persenScope1)}
               </span>
             </div>
             <input
               type="range"
-              min="0"
-              max="15"
-              step="0.5"
-              value={0}
-              disabled
-              title={SPESIFIKASI}
-              onChange={() => undefined}
+              min={RENTANG.min}
+              max={RENTANG.max}
+              step={RENTANG.langkah}
+              value={persenScope1}
+              aria-label="Pengurangan Scope 1 (%)"
+              onChange={(e) => setPersenScope1(Number(e.target.value))}
               className="w-full accent-[#00675e] cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-[#5c5e64]">
-              <span>{D}</span>
-              <span>{D}</span>
-              <span>{D}</span>
+              <span>{persen(PENANDA[0])}</span>
+              <span>{persen(PENANDA[1])}</span>
+              <span>{persen(PENANDA[2])}</span>
             </div>
           </div>
         </div>
@@ -237,15 +288,15 @@ export default function DecisionLabPage() {
             Kartu skenario
           </h3>
           <span className="text-[12px] text-[#5c5e64]">
-            {SPESIFIKASI}
+            Urutan berdasarkan pengurangan emisi hipotetis. Bukan rekomendasi.
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {options.map((opt) => {
             const isOptSelected = opt.selected;
-            const biaya = D;
-            const waktu = D;
+            const biaya = opt.implementationCostIdr === null ? D : fmtAngka(opt.implementationCostIdr);
+            const waktu = opt.implementationMonths === null ? D : fmtAngka(opt.implementationMonths);
 
             return (
               <div
@@ -293,7 +344,7 @@ export default function DecisionLabPage() {
                           : "text-[#0b1c30]"
                       }`}
                     >
-                      {D}
+                      {opt.costEffectiveness === null ? D : `${fmtAngka(opt.costEffectiveness)} / ${SATUAN}`}
                     </span>
                   </div>
 
@@ -312,7 +363,7 @@ export default function DecisionLabPage() {
                   <div>
                     <span className="text-[#5c5e64] block">Pengurangan:</span>
                     <strong className="text-[#00675e]">
-                      {D}
+                      {ton(opt.reductionTco2e)}
                     </strong>
                   </div>
                   <div>
@@ -341,7 +392,7 @@ export default function DecisionLabPage() {
             Tabel perbandingan
           </h3>
           <p className="text-[12px] text-[#5c5e64] mt-0.5">
-            {SPESIFIKASI}
+            {HIPOTETIS} · diurutkan dari pengurangan terbesar; bukan rekomendasi
           </p>
         </div>
 
@@ -350,10 +401,10 @@ export default function DecisionLabPage() {
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
                 <th className="py-3 px-4">INTERVENSI</th>
-                <th className="py-3 px-4">SCOPE / TAG</th>
+                <th className="py-3 px-4">LABEL</th>
                 <th className="py-3 px-4 text-right">PENGURANGAN</th>
-                <th className="py-3 px-4 text-right">BIAYA IMPLEMENTASI</th>
-                <th className="py-3 px-4 text-right">BIAYA OPERASIONAL</th>
+                <th className="py-3 px-4 text-right">EMISI SESUDAH</th>
+                <th className="py-3 px-4 text-right">SISA GAP</th>
                 <th className="py-3 px-4 text-right">BIAYA PER tCO₂e</th>
                 <th className="py-3 px-4 text-right">WAKTU</th>
                 <th className="py-3 px-4 text-center">AKSI</th>
@@ -377,19 +428,19 @@ export default function DecisionLabPage() {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-[#00675e]">
-                    {D}
+                    {fmtAngka(opt.reductionTco2e)}
                   </td>
                   <td className="py-3.5 px-4 text-right font-semibold text-[#0b1c30]">
-                    {D}
+                    {fmtAngka(hasilById.get(opt.id)?.emisiSesudah)}
                   </td>
                   <td className="py-3.5 px-4 text-right font-semibold text-[#00675e]">
-                    {D}
+                    {fmtAngka(hasilById.get(opt.id)?.sisaGap)}
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-[#0b1c30]">
-                    {D}
+                    {opt.costEffectiveness === null ? D : fmtAngka(opt.costEffectiveness)}
                   </td>
                   <td className="py-3.5 px-4 text-right text-[#5c5e64]">
-                    {D}
+                    {opt.implementationMonths === null ? D : fmtAngka(opt.implementationMonths)}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <button
@@ -401,7 +452,7 @@ export default function DecisionLabPage() {
                           : "bg-white border border-[#c4c6cd]/50 text-[#0b1c30] hover:bg-gray-50"
                       }`}
                     >
-                      {D}
+                      {opt.selected ? "Dipilih" : "Pilih"}
                     </button>
                   </td>
                 </tr>
@@ -417,7 +468,9 @@ export default function DecisionLabPage() {
         <div className="space-y-1 text-[12px] text-[#0b1c30]">
           <h4 className="font-bold text-[13px]">Panel asumsi</h4>
           <p className="text-[#5c5e64] leading-relaxed">
-            {SPESIFIKASI}: <strong>{D}</strong> {D} <strong>{D}</strong> {D} <strong>{D}</strong> {D}
+            Baseline FY {TAHUN_BASELINE}: <strong>{fmtAngka(BASELINE.total)} {SATUAN}</strong> (Scope 1 {fmtAngka(BASELINE.scope1)}, Scope 2 {fmtAngka(BASELINE.scope2)}; {SUMBER_BASELINE}). Level target:{" "}
+            <strong>{fmtAngka(BASELINE.target)} {SATUAN}</strong> ({STATUS_TARGET}). Parameter yang diatur:{" "}
+            <strong>Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}</strong>; biaya dan waktu implementasi belum diisi.
           </p>
         </div>
       </div>
