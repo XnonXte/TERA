@@ -11,7 +11,7 @@ import {
   LABEL_STATUS,
 } from "@/lib/reconciliation";
 import { Peristiwa, MasukanPeristiwa, tambahPeristiwa } from "@/lib/log";
-import { SKENARIO_AWAL_PERSEN_SCOPE2, LABEL_HIPOTETIS } from "@/lib/keputusan";
+import { SKENARIO_AWAL_PERSEN_SCOPE2 } from "@/lib/keputusan";
 
 export interface Skenario {
   id: string;
@@ -25,7 +25,7 @@ export interface Skenario {
 
 const LEBAR_ID_SKENARIO = 2;
 const idSkenario = (i: number) => `S-${String(i).padStart(LEBAR_ID_SKENARIO, "0")}`;
-const namaSkenario = (r2: number, r1: number) => `${LABEL_HIPOTETIS}: Scope 2 −${r2}%, Scope 1 −${r1}%`;
+const namaSkenario = (r2: number, r1: number) => `Scope 2 −${r2}% · Scope 1 −${r1}%`;
 const SKENARIO_AWAL: Skenario[] = SKENARIO_AWAL_PERSEN_SCOPE2.map((r2, i) => ({
   id: idSkenario(i + 1),
   nama: namaSkenario(r2, 0),

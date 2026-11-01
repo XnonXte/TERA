@@ -171,9 +171,6 @@ export default function DecisionLabPage() {
               {fmtAngka(hasil.pengurangan)}
             </div>
           </div>
-          <div className="text-[12px] text-[#00675e] font-semibold">
-            {HIPOTETIS} · Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}
-          </div>
         </div>
 
         {/* Card 2: Biaya implementasi */}
@@ -231,9 +228,6 @@ export default function DecisionLabPage() {
               Parameter skenario
             </h3>
           </div>
-          <span className="text-[11px] font-semibold text-[#5c5e64]">
-            {HIPOTETIS}
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -343,9 +337,6 @@ export default function DecisionLabPage() {
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
             Kartu skenario
           </h3>
-          <span className="text-[12px] text-[#5c5e64]">
-            Urutan berdasarkan pengurangan emisi hipotetis. Bukan rekomendasi.
-          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -381,9 +372,6 @@ export default function DecisionLabPage() {
                           <span className="text-[11px] font-mono font-bold text-[#5c5e64]">
                             {opt.code}
                           </span>
-                          <span className="text-[11px] font-semibold text-[#0b1c30] bg-[#eff4ff] px-2 py-0.5 rounded">
-                            {opt.tag}
-                          </span>
                         </div>
                         <h4 className="text-[15px] font-bold text-[#0b1c30] mt-1">
                           {opt.name}
@@ -403,10 +391,6 @@ export default function DecisionLabPage() {
                       {perTon(opt.costEffectiveness)}
                     </span>
                   </div>
-
-                  <p className="text-[12px] text-[#5c5e64] mt-2.5 leading-relaxed pl-8">
-                    {opt.description}
-                  </p>
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-[#f1f5f9] grid grid-cols-3 gap-2 text-[11px] pl-8">
@@ -447,9 +431,6 @@ export default function DecisionLabPage() {
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
             Tabel perbandingan
           </h3>
-          <p className="text-[12px] text-[#5c5e64] mt-0.5">
-            {HIPOTETIS} · diurutkan dari pengurangan terbesar; bukan rekomendasi
-          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -457,7 +438,6 @@ export default function DecisionLabPage() {
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
                 <th className="py-3 px-4">INTERVENSI</th>
-                <th className="py-3 px-4">LABEL</th>
                 <th className="py-3 px-4 text-right">PENGURANGAN</th>
                 <th className="py-3 px-4 text-right">EMISI SESUDAH</th>
                 <th className="py-3 px-4 text-right">SISA GAP</th>
@@ -477,11 +457,6 @@ export default function DecisionLabPage() {
                   <td className="py-3.5 px-4">
                     <div className="font-bold text-[#0b1c30]">{opt.name}</div>
                     <div className="text-[11px] text-[#5c5e64] font-mono">{opt.code}</div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
-                      {opt.tag}
-                    </span>
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-[#00675e]">
                     {fmtAngka(opt.reductionTco2e)}
@@ -522,11 +497,9 @@ export default function DecisionLabPage() {
       <div className="bg-[#eff4ff] rounded-[12px] p-5 border border-[#dce9ff] flex items-start gap-4">
         <Info className="w-5 h-5 text-[#00675e] shrink-0 mt-0.5" />
         <div className="space-y-1 text-[12px] text-[#0b1c30]">
-          <h4 className="font-bold text-[13px]">Panel asumsi</h4>
           <p className="text-[#5c5e64] leading-relaxed">
-            Baseline FY {TAHUN_BASELINE}: <strong>{fmtAngka(BASELINE.total)} {SATUAN}</strong> (Scope 1 {fmtAngka(BASELINE.scope1)}, Scope 2 {fmtAngka(BASELINE.scope2)}; {SUMBER_BASELINE}). Level target:{" "}
-            <strong>{fmtAngka(BASELINE.target)} {SATUAN}</strong> ({STATUS_TARGET}). Parameter yang diatur:{" "}
-            <strong>Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}</strong>; biaya implementasi {rupiah(biaya)}, waktu {bulan(waktu)} (isian pengguna; kosong = belum diisi).
+            Baseline FY {TAHUN_BASELINE}: <strong>{fmtAngka(BASELINE.total)} {SATUAN}</strong> ({SUMBER_BASELINE}). Level target{" "}
+            <strong>{fmtAngka(BASELINE.target)} {SATUAN}</strong> ({STATUS_TARGET}).
           </p>
         </div>
       </div>

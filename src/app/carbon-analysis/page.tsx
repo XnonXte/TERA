@@ -18,13 +18,11 @@ import { CarbonDriver } from "@/types/tera";
 import { SEED, sumberLaporan } from "@/lib/seed";
 import { TAHUN, nilaiTahun, SUMBER_DASHBOARD } from "@/lib/dashboard";
 import { dekomposisi, langkahWaterfall, persenTerhadap, lebarBatang } from "@/lib/hitung-carbon";
-import { jalankanAturan } from "@/lib/rules";
 import { REVISI } from "@/lib/reconciliation";
 import { fmtAngka, fmtBertanda, fmtPersen, fmtPersenKontribusi, KOSONG } from "@/lib/format";
 
 const SPESIFIKASI = "Spesifikasi";
 const D = KOSONG;
-const DARI_SEED = "Dihitung dari seed";
 
 // Pasangan tahun dari seed: berurutan, lalu tahun pertama → terakhir.
 const PASANGAN: [string, string][] = [
@@ -34,10 +32,8 @@ const PASANGAN: [string, string][] = [
 // Kunci chip asli dipakai sebagai indeks pasangan.
 const KUNCI_CHIP = ["All", "Scope 1", "Scope 2"];
 const label = (p?: [string, string]) => (p ? `${p[0]}→${p[1]}` : D);
-// Hasil aturan dan revisi yang belum terselesaikan (dari seed, deterministik).
-const ATURAN = jalankanAturan(SEED.cek_32).ringkasan;
+// Revisi yang belum terselesaikan (dari seed).
 const REVISI_UNRESOLVED = REVISI.filter((r) => r.kodeAlasan === "Unresolved").length;
-const daftarNo = (xs: number[]) => xs.map((n) => `#${n}`).join(", ");
 
 export default function CarbonAnalysisPage() {
   const [activeScopeFilter, setActiveScopeFilter] = useState(KUNCI_CHIP[PASANGAN.length - 1]);
@@ -137,7 +133,6 @@ export default function CarbonAnalysisPage() {
         <button
           type="button"
           onClick={() => setActiveScopeFilter("All")}
-          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "All"
               ? "bg-[#b80035] text-white shadow-sm"
@@ -149,7 +144,6 @@ export default function CarbonAnalysisPage() {
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 1")}
-          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 1"
               ? "bg-[#b80035] text-white shadow-sm"
@@ -161,7 +155,6 @@ export default function CarbonAnalysisPage() {
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 2")}
-          title={DARI_SEED}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 2"
               ? "bg-[#b80035] text-white shadow-sm"
@@ -213,7 +206,7 @@ export default function CarbonAnalysisPage() {
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            {fmtPersen(persenTotal)} terhadap FY {tAwal} · {DARI_SEED}
+            {fmtPersen(persenTotal)} terhadap FY {tAwal}
           </div>
         </div>
 
@@ -228,7 +221,7 @@ export default function CarbonAnalysisPage() {
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            Kontribusi Scope 1: {fmtPersenKontribusi(dk.kontribusiScope1Pct)} · {DARI_SEED}
+            Kontribusi Scope 1: {fmtPersenKontribusi(dk.kontribusiScope1Pct)}
           </div>
         </div>
 
@@ -236,14 +229,11 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Pendorong belum terselesaikan
+              Revisi belum terselesaikan
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
               {REVISI_UNRESOLVED}
             </div>
-          </div>
-          <div className="text-[12px] text-[#b80035] font-semibold">
-            revisi Unresolved · ditandai {daftarNo(ATURAN.ditandai)} · di luar cakupan {daftarNo(ATURAN.diLuarCakupan)}
           </div>
         </div>
       </div>
@@ -261,9 +251,6 @@ export default function CarbonAnalysisPage() {
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
             Kontribusi terhadap perubahan FY {label(pasangan)}
           </h3>
-          <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
-            {DARI_SEED}
-          </span>
         </div>
 
         {/* Visual Proportional Comparison Bars */}
@@ -300,7 +287,7 @@ export default function CarbonAnalysisPage() {
           <Info className="w-5 h-5 text-[#00675e] shrink-0 mt-0.5" />
           <div className="text-[12px] text-[#0b1c30] leading-relaxed">
             <span className="font-bold">Temuan: </span>
-            <strong>Perubahan {label(pasangan)}</strong> secara aritmetik didominasi <strong>{dominan}</strong>. Sebab perubahan tidak dinyatakan pada seed: Belum terbukti.
+            <strong>Perubahan FY {label(pasangan)}</strong> secara aritmetik didominasi <strong>{dominan}</strong>.
           </div>
         </div>
       </div>
@@ -313,7 +300,7 @@ export default function CarbonAnalysisPage() {
               Sumber dan rincian perhitungan
             </h3>
             <p className="text-[12px] text-[#5c5e64] mt-0.5">
-              {DARI_SEED} · FY {label(pasangan)}
+              FY {label(pasangan)}
             </p>
           </div>
 
@@ -375,7 +362,6 @@ export default function CarbonAnalysisPage() {
                 <th className="py-3 px-4">SCOPE</th>
                 <th className="py-3 px-4 text-right">NILAI (tCO₂e)</th>
                 <th className="py-3 px-4 text-right">KONTRIBUSI</th>
-                <th className="py-3 px-4">STATUS</th>
                 <th className="py-3 px-4">AKSI</th>
               </tr>
             </thead>
@@ -442,20 +428,6 @@ export default function CarbonAnalysisPage() {
 
                     <td className="py-3.5 px-4 text-right font-semibold text-[#0b1c30]">
                       {contribPercent}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                          driver.uncertaintyStatus === "terverifikasi"
-                            ? "bg-[#dcfce7] text-[#15803d]"
-                            : driver.uncertaintyStatus === "estimasi"
-                            ? "bg-[#fef3c7] text-[#d97706]"
-                            : "bg-[#ffdad6] text-[#b80035]"
-                        }`}
-                      >
-                        {driver.uncertaintyStatus === "terverifikasi" ? DARI_SEED : D}
-                      </span>
                     </td>
 
                     <td className="py-3.5 px-4">

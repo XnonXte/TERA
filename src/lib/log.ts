@@ -5,7 +5,7 @@ export type JenisPeristiwa = "aturan" | "ajukan" | "setujui" | "tolak" | "reset"
 
 export const LABEL_PERISTIWA: Record<JenisPeristiwa, string> = {
   aturan: "Aturan dijalankan",
-  ajukan: "Diajukan (simulasi)",
+  ajukan: "Diajukan",
   setujui: "Disetujui (simulasi)",
   tolak: "Ditolak (simulasi)",
   reset: "Reset simulasi",
