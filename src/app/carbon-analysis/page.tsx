@@ -287,7 +287,7 @@ export default function CarbonAnalysisPage() {
           <Info className="w-5 h-5 text-[#00675e] shrink-0 mt-0.5" />
           <div className="text-[12px] text-[#0b1c30] leading-relaxed">
             <span className="font-bold">Temuan: </span>
-            <strong>Perubahan {label(pasangan)}</strong> secara aritmetik didominasi <strong>{dominan}</strong>.
+            <strong>Perubahan FY {label(pasangan)}</strong> secara aritmetik didominasi <strong>{dominan}</strong>.
           </div>
         </div>
       </div>
