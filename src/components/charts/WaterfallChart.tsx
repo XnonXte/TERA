@@ -36,28 +36,28 @@ export default function WaterfallChart({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-bold text-[#0b1c30]">
-              Carbon Driver Decomposition Waterfall (2024 → 2025)
+              Dekomposisi pendorong emisi
             </h3>
             <span className="text-[11px] font-bold bg-[#fff1f2] text-[#b80035] px-2 py-0.5 rounded-full border border-[#ffdad6]">
-              Net Variance: +138.2 tCO₂e (+12.1%)
+              Spesifikasi
             </span>
           </div>
           <p className="text-[12px] text-[#5c5e64]">
-            Exact attribution of activity growth, grid factor adjustment, boundary expansion, and efficiency gains
+            —
           </p>
         </div>
         <div className="flex items-center gap-3 text-[11px] font-medium text-[#5c5e64]">
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-[#0b1c30]" /> Baseline Anchor
+            <span className="w-2.5 h-2.5 rounded bg-[#0b1c30]" /> Awal
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-[#b80035]" /> Emissions Increase
+            <span className="w-2.5 h-2.5 rounded bg-[#b80035]" /> Kenaikan
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-[#00675e]" /> Decarbonization Reduction
+            <span className="w-2.5 h-2.5 rounded bg-[#00675e]" /> Penurunan
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-[#f59e0b] border border-dashed border-[#b45309]" /> Unresolved Gap
+            <span className="w-2.5 h-2.5 rounded bg-[#f59e0b] border border-dashed border-[#b45309]" /> Belum terselesaikan
           </span>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function WaterfallChart({
                   textAnchor="end"
                   fontFamily="sans-serif"
                 >
-                  {level}
+                  —
                 </text>
               </g>
             );
@@ -132,13 +132,13 @@ export default function WaterfallChart({
               barY = getY(driver.deltaTco2e);
               barH = chartHeight - paddingBottom - barY;
               fillColor = "#0b1c30";
-              valLabel = "1,146.0";
+              valLabel = "—";
             } else if (index === drivers.length - 1) {
               // 2025 Result Anchor
               barY = getY(driver.deltaTco2e);
               barH = chartHeight - paddingBottom - barY;
               fillColor = "#0b1c30";
-              valLabel = "1,284.2";
+              valLabel = "—";
             } else {
               prevVal = drivers[index - 1].runningVal;
               const curVal = driver.runningVal;
@@ -158,7 +158,7 @@ export default function WaterfallChart({
                 barY = getY(curVal) - 10;
                 barH = 20;
                 fillColor = "url(#diagonalHatch)";
-                valLabel = "+0.0*";
+                valLabel = "—";
               }
             }
 

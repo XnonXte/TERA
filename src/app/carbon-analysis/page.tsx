@@ -14,21 +14,19 @@ import {
   Zap,
 } from "lucide-react";
 import WaterfallChart from "@/components/charts/WaterfallChart";
-import { useTeraStore } from "@/stores/useTeraStore";
 import { CarbonDriver } from "@/types/tera";
 
+// Halaman spesifikasi: belum ada data pendorong di seed.
+const SPESIFIKASI = "Spesifikasi";
+const D = "—";
+
 export default function CarbonAnalysisPage() {
-  const { drivers } = useTeraStore();
+  const drivers: CarbonDriver[] = [];
 
   const [activeScopeFilter, setActiveScopeFilter] = useState("All");
-  const [selectedDriver, setSelectedDriver] = useState<CarbonDriver>(drivers[3]); // default to +42 BTS Sites
+  const [selectedDriver, setSelectedDriver] = useState<CarbonDriver | undefined>(drivers[0]);
   const [tableCategory, setTableCategory] = useState("All");
 
-  // Breakdown metrics
-  const anchorBase = 1146.0;
-  const grossGrowth = 142.2;
-  const opReductions = -4.0;
-  const finalResult = 1284.2;
 
   // Filtered drivers for the registry table
   const filteredDrivers = useMemo(() => {
@@ -52,7 +50,7 @@ export default function CarbonAnalysisPage() {
       {/* 1. Breadcrumb */}
       <nav className="flex items-center gap-2 text-[12px] text-[#5c5e64]">
         <Link href="/overview" className="hover:text-[#0b1c30] transition-colors">
-          Home
+          Beranda
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-[#5c5e64]/60" />
         <span className="font-semibold text-[#0b1c30]">Carbon Driver Analysis</span>
@@ -65,19 +63,18 @@ export default function CarbonAnalysisPage() {
             Carbon Driver Analysis
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Decompose YoY emissions growth and identify structural, operational, and grid factor drivers.
+            Memisahkan faktor penyebab perubahan emisi berdasarkan data yang tersedia.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() =>
-            alert("Attribution Driver Matrix exported to CSV/Excel (FY2025).")
-          }
+          disabled
+          title="Spesifikasi"
           className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm shrink-0"
         >
           <Download className="w-4 h-4 text-[#5c5e64]" />
-          <span>Export Attribution Matrix</span>
+          <span>Ekspor matriks</span>
         </button>
       </div>
 
@@ -86,46 +83,54 @@ export default function CarbonAnalysisPage() {
         <button
           type="button"
           onClick={() => setActiveScopeFilter("All")}
+          disabled
+          title={SPESIFIKASI}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "All"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          All Drivers ({drivers.length})
+          Semua pendorong ({D})
         </button>
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 1")}
+          disabled
+          title={SPESIFIKASI}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 1"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Scope 1 Direct (3)
+          Scope 1 ({D})
         </button>
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Scope 2")}
+          disabled
+          title={SPESIFIKASI}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Scope 2"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Scope 2 Electricity (5)
+          Scope 2 ({D})
         </button>
         <button
           type="button"
           onClick={() => setActiveScopeFilter("Material")}
+          disabled
+          title={SPESIFIKASI}
           className={`px-3.5 py-1.5 rounded-[8px] text-[12px] font-semibold transition-colors ${
             activeScopeFilter === "Material"
               ? "bg-[#b80035] text-white shadow-sm"
               : "bg-white text-[#5c5e64] border border-[#e5eeff] hover:bg-[#f8f9ff]"
           }`}
         >
-          Material Drivers (&gt;10 tCO₂e)
+          Pendorong material ({D})
         </button>
       </div>
 
@@ -135,14 +140,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              2024 Base Year Anchor
+              Filter tahun dan periode
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {anchorBase.toFixed(1)} tCO₂e
+              {D}
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            Audited base reference (v2024.1)
+            {SPESIFIKASI}
           </div>
         </div>
 
@@ -150,14 +155,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Gross Structural Growth
+              Tren emisi
             </div>
             <div className="text-[30px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight mt-1">
-              +{grossGrowth.toFixed(1)} tCO₂e
+              {D}
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            +12.4% vs base (activity &amp; grid factor)
+            {SPESIFIKASI}
           </div>
         </div>
 
@@ -165,14 +170,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Operational Reductions
+              Rincian Scope 1 dan Scope 2
             </div>
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
-              {opReductions.toFixed(1)} tCO₂e
+              {D}
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            -0.35% savings (DC Chiller Inverter)
+            {SPESIFIKASI}
           </div>
         </div>
 
@@ -180,14 +185,14 @@ export default function CarbonAnalysisPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              2025 Current Footprint
+              Keyakinan data dan pendorong yang belum terselesaikan
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {finalResult.toFixed(1)} tCO₂e
+              {D}
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            +138.2 tCO₂e net change (+12.06%)
+            {SPESIFIKASI}
           </div>
         </div>
       </div>
@@ -195,7 +200,7 @@ export default function CarbonAnalysisPage() {
       {/* 5. Waterfall Chart Component */}
       <WaterfallChart
         drivers={drivers}
-        selectedDriverId={selectedDriver.id}
+        selectedDriverId={selectedDriver?.id}
         onSelectDriver={(d) => setSelectedDriver(d)}
       />
 
@@ -203,10 +208,10 @@ export default function CarbonAnalysisPage() {
       <div className="bg-white rounded-[12px] p-6 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-            Proportional Scope Contribution
+            Rincian Scope 1 dan Scope 2
           </h3>
           <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
-            Total: 1,284.2 tCO₂e
+            {SPESIFIKASI}
           </span>
         </div>
 
@@ -216,12 +221,12 @@ export default function CarbonAnalysisPage() {
             <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30] mb-1.5">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#b80035]" />
-                <span>Scope 2 (Indirect Electricity &amp; Regional Grids)</span>
+                <span>{D}</span>
               </div>
-              <span className="text-[13px] font-bold">1,020.2 tCO₂e (79.4%)</span>
+              <span className="text-[13px] font-bold">{D}</span>
             </div>
             <div className="w-full bg-[#f1f5f9] h-3 rounded-full overflow-hidden">
-              <div className="bg-[#b80035] h-full rounded-full" style={{ width: "79.4%" }} />
+              <div className="bg-[#b80035] h-full rounded-full" style={{ width: "0%" }} />
             </div>
           </div>
 
@@ -229,12 +234,12 @@ export default function CarbonAnalysisPage() {
             <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30] mb-1.5">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-[#ffb3b6]" />
-                <span>Scope 1 (Direct Fuel, Generators &amp; Fleet)</span>
+                <span>{D}</span>
               </div>
-              <span className="text-[13px] font-bold">264.0 tCO₂e (20.6%)</span>
+              <span className="text-[13px] font-bold">{D}</span>
             </div>
             <div className="w-full bg-[#f1f5f9] h-3 rounded-full overflow-hidden">
-              <div className="bg-[#ffb3b6] h-full rounded-full" style={{ width: "20.6%" }} />
+              <div className="bg-[#ffb3b6] h-full rounded-full" style={{ width: "0%" }} />
             </div>
           </div>
         </div>
@@ -243,8 +248,8 @@ export default function CarbonAnalysisPage() {
         <div className="p-4 bg-[#eff4ff] border border-[#dce9ff] rounded-[10px] flex items-start gap-3">
           <Info className="w-5 h-5 text-[#00675e] shrink-0 mt-0.5" />
           <div className="text-[12px] text-[#0b1c30] leading-relaxed">
-            <span className="font-bold">Core Driver Finding: </span>
-            <strong>79.4%</strong> of the emissions growth is driven by Scope 2 electricity consumption across regional data centers and 42 newly commissioned 5G BTS towers. Grid emission factor adjustments under MEMR #189 contributed an additional <strong>+45.8 tCO₂e</strong> without an increase in underlying energy consumption.
+            <span className="font-bold">{SPESIFIKASI}: </span>
+            <strong>{D}</strong> {D} <strong>{D}</strong> {D}
           </div>
         </div>
       </div>
@@ -254,10 +259,10 @@ export default function CarbonAnalysisPage() {
         <div className="p-5 border-b border-[#e5eeff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Driver Decomposition Registry
+              Sumber dan rincian perhitungan
             </h3>
             <p className="text-[12px] text-[#5c5e64] mt-0.5">
-              Line-by-line attribution of factors contributing to the 2024–2025 net change
+              {SPESIFIKASI}
             </p>
           </div>
 
@@ -265,46 +270,54 @@ export default function CarbonAnalysisPage() {
             <button
               type="button"
               onClick={() => setTableCategory("All")}
+              disabled
+              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "All"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              All Categories
+              Semua kategori
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Boundary")}
+              disabled
+              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Boundary"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Boundary Expansion
+              Perubahan cakupan
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Grid")}
+              disabled
+              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Grid"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Grid Factor
+              Faktor emisi
             </button>
             <button
               type="button"
               onClick={() => setTableCategory("Operational")}
+              disabled
+              title={SPESIFIKASI}
               className={`px-3 py-1.5 rounded-[6px] font-semibold transition-colors ${
                 tableCategory === "Operational"
                   ? "bg-[#b80035] text-white shadow-sm"
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Efficiency
+              Efisiensi
             </button>
           </div>
         </div>
@@ -313,13 +326,13 @@ export default function CarbonAnalysisPage() {
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">DRIVER ID</th>
-                <th className="py-3 px-4">DRIVER DESCRIPTION</th>
-                <th className="py-3 px-4">CATEGORY</th>
+                <th className="py-3 px-4">ID</th>
+                <th className="py-3 px-4">PENDORONG</th>
+                <th className="py-3 px-4">KATEGORI</th>
                 <th className="py-3 px-4">SCOPE</th>
-                <th className="py-3 px-4 text-right">IMPACT (tCO₂e)</th>
-                <th className="py-3 px-4 text-right">CONTRIBUTION</th>
-                <th className="py-3 px-4">DATA CONFIDENCE</th>
+                <th className="py-3 px-4 text-right">DAMPAK (tCO₂e)</th>
+                <th className="py-3 px-4 text-right">KONTRIBUSI</th>
+                <th className="py-3 px-4">KEYAKINAN DATA</th>
                 <th className="py-3 px-4">STATUS</th>
               </tr>
             </thead>
@@ -328,11 +341,11 @@ export default function CarbonAnalysisPage() {
                 const isInc = driver.type === "increase";
                 const isRed = driver.type === "reduction";
                 const isUnres = driver.type === "unresolved";
-                const isSelected = selectedDriver.id === driver.id;
+                const isSelected = selectedDriver?.id === driver.id;
 
                 const contribPercent =
                   driver.type === "increase" || driver.type === "reduction"
-                    ? ((driver.deltaTco2e / 138.2) * 100).toFixed(1)
+                    ? D
                     : "—";
 
                 return (
@@ -411,7 +424,7 @@ export default function CarbonAnalysisPage() {
                         }}
                         className="text-[12px] font-semibold text-[#b80035] hover:underline"
                       >
-                        Inspect
+                        Lihat
                       </button>
                     </td>
                   </tr>
