@@ -45,9 +45,6 @@ export default function WaterfallChart({
             <h3 className="text-[14px] font-bold text-[#0b1c30]">
               Dekomposisi pendorong emisi
             </h3>
-            <span className="text-[11px] font-bold bg-[#fff1f2] text-[#b80035] px-2 py-0.5 rounded-full border border-[#ffdad6]">
-              Dihitung dari seed
-            </span>
           </div>
           <p className="text-[12px] text-[#5c5e64]">
             {drivers.length ? `${drivers[0].name} → ${drivers[drivers.length - 1].name} · ${drivers[0].source}` : "—"}
