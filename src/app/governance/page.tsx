@@ -22,7 +22,6 @@ import { LABEL_PERISTIWA, JenisPeristiwa, PELAKU, Peristiwa } from "@/lib/log";
 import { fmtWaktu, KOSONG } from "@/lib/format";
 
 const SPESIFIKASI = "Spesifikasi";
-const SIMULASI = "Simulasi";
 const D = KOSONG;
 // Kode warna badge aksi pada desain asli.
 const WARNA_AKSI: Record<JenisPeristiwa, LogAction> = {
@@ -59,7 +58,7 @@ export default function GovernancePage() {
     objectTitle: `${x.objek} · ${x.sebelum} → ${x.sesudah}`,
     previousValue: x.sebelum,
     newValue: x.sesudah,
-    reason: x.alasan,
+    reason: x.aksi === "aturan" ? "" : x.alasan,
     evidence: x.bukti,
     hash: x.bukti,
     statusBadge: LABEL_PERISTIWA[x.aksi],
@@ -110,7 +109,7 @@ export default function GovernancePage() {
             Governance &amp; Jejak Perubahan
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Mencatat aksi yang dilakukan di prototipe ini: aturan dijalankan, persetujuan simulasi, dan skenario disimpan.
+            Mencatat aksi yang dilakukan di prototipe ini: aturan dijalankan, persetujuan simulasi, dan skenario disimpan. Log hilang saat halaman dimuat ulang.
           </p>
         </div>
 
@@ -160,9 +159,6 @@ export default function GovernancePage() {
               {peristiwa.length}
             </div>
           </div>
-          <div className="text-[12px] text-[#5c5e64]">
-            {SIMULASI} · hilang saat halaman dimuat ulang
-          </div>
         </div>
 
         {/* Card 2: Menunggu review */}
@@ -174,9 +170,6 @@ export default function GovernancePage() {
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
               {jumlahPending}
             </div>
-          </div>
-          <div className="text-[12px] text-[#5c5e64] truncate">
-            {SIMULASI} · versi berstatus Pending Review
           </div>
         </div>
 
@@ -190,9 +183,6 @@ export default function GovernancePage() {
               {jumlahApproved}
             </div>
           </div>
-          <div className="text-[12px] text-[#5c5e64]">
-            {SIMULASI} · versi berstatus Approved
-          </div>
         </div>
 
         {/* Card 4: Integrity Verification */}
@@ -204,9 +194,6 @@ export default function GovernancePage() {
             <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
               {jumlahApproved + jumlahRejected}
             </div>
-          </div>
-          <div className="text-[12px] text-[#00675e] font-semibold">
-            {SIMULASI} · disetujui {jumlahApproved}, ditolak {jumlahRejected}
           </div>
         </div>
       </div>
@@ -309,9 +296,6 @@ export default function GovernancePage() {
                 Klik baris untuk melihat detail
               </p>
             </div>
-            <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
-              {SIMULASI} · {filteredEvents.length} peristiwa
-            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -342,9 +326,6 @@ export default function GovernancePage() {
                         <div>
                           <div className="font-semibold text-[#0b1c30] text-[12px]">
                             {ev.actor}
-                          </div>
-                          <div className="text-[10px] text-[#5c5e64]">
-                            {ev.actorRole}
                           </div>
                         </div>
                       </div>
@@ -425,7 +406,7 @@ export default function GovernancePage() {
                     <span className="text-[10px] text-[#00675e] font-semibold">{terpilih ? LABEL_PERISTIWA[terpilih.aksi] : D}</span>
                   </div>
                   <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? fmtWaktu(terpilih.waktu) : D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? `${terpilih.pelaku} · ${terpilih.peran}` : D}</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? terpilih.pelaku : D}</p>
                 </div>
               </div>
 
@@ -439,7 +420,6 @@ export default function GovernancePage() {
                     <span className="text-[11px] font-bold text-[#0b1c30]">
                       Objek
                     </span>
-                    <span className="text-[10px] text-[#00675e] font-semibold">{SIMULASI}</span>
                   </div>
                   <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? terpilih.objek : D}</p>
                   <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? LABEL_PERISTIWA[terpilih.aksi] : D}</p>
@@ -456,10 +436,8 @@ export default function GovernancePage() {
                     <span className="text-[11px] font-bold text-[#0b1c30]">
                       Status sebelum → sesudah
                     </span>
-                    <span className="text-[10px] text-[#00675e] font-semibold">{SIMULASI}</span>
                   </div>
                   <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? `${terpilih.sebelum} → ${terpilih.sesudah}` : D}</p>
-                  <p className="text-[10px] text-[#5c5e64] mt-0.5">{SIMULASI}</p>
                 </div>
               </div>
 
@@ -473,9 +451,8 @@ export default function GovernancePage() {
                     <span className="text-[11px] font-bold text-[#78350f]">
                       Alasan dan bukti
                     </span>
-                    <span className="text-[10px] text-[#d97706] font-bold">{SIMULASI}</span>
                   </div>
-                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih ? terpilih.alasan || D : D}</p>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">{terpilih && terpilih.aksi !== "aturan" ? terpilih.alasan || D : D}</p>
                   <p className="text-[10px] text-[#5c5e64] mt-0.5">{terpilih ? `Bukti: ${terpilih.bukti}` : D}</p>
                 </div>
               </div>
@@ -491,12 +468,8 @@ export default function GovernancePage() {
               </h4>
             </div>
             <p className="text-[11px] text-[#5c5e64] leading-relaxed">
-              Peran disimulasikan: <strong>{PELAKU}</strong>. Tanpa login dan tanpa pemisahan peran.
+              {PELAKU} · tanpa login
             </p>
-            <div className="text-[10px] text-[#5c5e64] pt-2 border-t border-[#dce9ff] flex items-center justify-between">
-              <span>Tanpa login</span>
-              <span className="text-[#00675e] font-semibold">{SIMULASI}</span>
-            </div>
           </div>
         </div>
       </div>
