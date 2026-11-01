@@ -2,10 +2,16 @@
 
 import React from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import { TAHUN, nilaiTahun, komposisi, LEVEL_TARGET } from "@/lib/dashboard";
+import { fmtAngka, fmtPersen } from "@/lib/format";
 
+// Komposisi FY terakhir dari seed (SR Telkomsel 2025, hlm 147).
+const TAHUN_TERAKHIR = TAHUN[TAHUN.length - 1];
+const K = komposisi(TAHUN_TERAKHIR);
+const TOTAL = nilaiTahun(TAHUN_TERAKHIR)?.scope1_2 ?? 0;
 const DATA = [
-  { name: "Scope 2", value: 1020, percent: "79%", color: "#b80035" },
-  { name: "Scope 1", value: 264, percent: "21%", color: "#ffb3b6" },
+  { name: "Scope 2", value: K.scope2, percent: fmtPersen(K.pctScope2, 2, false), color: "#b80035" },
+  { name: "Scope 1", value: K.scope1, percent: fmtPersen(K.pctScope1, 2, false), color: "#ffb3b6" },
 ];
 
 export default function EmissionsDonutChart() {
@@ -14,7 +20,7 @@ export default function EmissionsDonutChart() {
       {/* Title */}
       <div>
         <h2 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-          Emissions Breakdown
+          Komposisi emisi · FY {TAHUN_TERAKHIR}
         </h2>
       </div>
 
@@ -46,7 +52,7 @@ export default function EmissionsDonutChart() {
                     return (
                       <div className="bg-[#0b1c30] text-white p-2 rounded shadow-lg text-[11px]">
                         <span className="font-semibold">{d.name}: </span>
-                        <span>{d.value} tCO₂e ({d.percent})</span>
+                        <span>{fmtAngka(d.value)} tCO₂e ({d.percent})</span>
                       </div>
                     );
                   }
@@ -62,7 +68,7 @@ export default function EmissionsDonutChart() {
               TOTAL
             </span>
             <span className="text-[20px] font-bold text-[#0b1c30] tracking-[-0.33px] leading-tight mt-0.5">
-              1,284
+              {fmtAngka(TOTAL / 1000000, 2)} jt
             </span>
           </div>
         </div>
@@ -76,7 +82,7 @@ export default function EmissionsDonutChart() {
               <span className="text-[12px] font-medium text-[#0b1c30]">Scope 2</span>
             </div>
             <span className="text-[12px] font-bold text-[#0b1c30]">
-              1,020 (79%)
+              {fmtAngka(DATA[0].value)} ({DATA[0].percent})
             </span>
           </div>
 
@@ -87,30 +93,24 @@ export default function EmissionsDonutChart() {
               <span className="text-[12px] font-medium text-[#0b1c30]">Scope 1</span>
             </div>
             <span className="text-[12px] font-bold text-[#0b1c30]">
-              264 (21%)
+              {fmtAngka(DATA[1].value)} ({DATA[1].percent})
             </span>
           </div>
         </div>
       </div>
 
       {/* Target Pathway Progress Card */}
-      <div className="bg-[#eff4ff]/60 border border-[#e5eeff] rounded-[8px] p-3 space-y-2">
+      <div className="bg-[#eff4ff]/60 border border-[#e5eeff] rounded-[8px] p-3 space-y-2" title={LEVEL_TARGET.label}>
         <div className="flex items-center justify-between text-[11px]">
           <span className="font-semibold text-[#0b1c30] tracking-[0.11px]">
-            Decarbonization Plan 2030
+            Level target
           </span>
           <span className="font-bold text-[#b80035] tracking-[0.24px]">
-            64% Achieved
+            {LEVEL_TARGET.status}
           </span>
         </div>
-        <div className="w-full bg-[#d3e4fe] h-2 rounded-full overflow-hidden">
-          <div
-            className="bg-[#b80035] h-full rounded-full transition-all"
-            style={{ width: "64%" }}
-          />
-        </div>
         <p className="text-[11px] text-[#5c5e64] leading-[15px]">
-          On track for 50% absolute emission cut (baseline 2020: 710 tCO₂e).
+          {fmtAngka(LEVEL_TARGET.nilai)} tCO₂e · gap FY {TAHUN_TERAKHIR}: {fmtAngka(LEVEL_TARGET.gap_ke_target)} tCO₂e
         </p>
       </div>
     </div>

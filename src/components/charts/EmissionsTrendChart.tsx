@@ -13,15 +13,16 @@ import {
   Tooltip,
 } from "recharts";
 import { ArrowRight } from "lucide-react";
+import { TAHUN, nilaiTahun, LEVEL_TARGET, SUMBER_DASHBOARD } from "@/lib/dashboard";
+import { fmtAngka } from "@/lib/format";
 
-const TREND_DATA = [
-  { year: "2020", actual: 800, target: 800 },
-  { year: "2021", actual: 860, target: 765 },
-  { year: "2022", actual: 940, target: 730 },
-  { year: "2023", actual: 1010, target: 700 },
-  { year: "2024", actual: 1146, target: 670 },
-  { year: "2025", actual: 1284, target: 640 },
-];
+// Scope 1+2 per tahun dari seed; garis putus-putus = level target (estimasi tim).
+const TREND_DATA = TAHUN.map((t) => ({
+  year: t,
+  actual: nilaiTahun(t)?.scope1_2 ?? 0,
+  target: LEVEL_TARGET.nilai,
+}));
+const TAHUN_TERAKHIR = TAHUN[TAHUN.length - 1];
 
 export default function EmissionsTrendChart() {
   return (
@@ -31,22 +32,23 @@ export default function EmissionsTrendChart() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Emissions Trend (Scope 1+2)
+              Tren emisi (Scope 1+2)
             </h2>
             <span className="bg-[#e5eeff] text-[#5c5e64] text-[11px] font-semibold px-2 py-0.5 rounded-[4px] tracking-[0.22px]">
-              2020 - 2025
+              {TAHUN[0]} - {TAHUN_TERAKHIR}
             </span>
           </div>
           <p className="text-[11px] text-[#5c5e64] mt-1 tracking-[0.11px]">
-            Historical GHG footprint trajectory measured against 2030 Science-Based Target.
+            Sumber: {SUMBER_DASHBOARD} · garis putus-putus: level target (estimasi tim)
           </p>
         </div>
 
         <Link
           href="/carbon-analysis"
+          title="Spesifikasi"
           className="flex items-center gap-1 text-[13px] font-semibold text-[#b80035] hover:underline"
         >
-          <span>View analysis</span>
+          <span>Lihat analisis</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -72,7 +74,7 @@ export default function EmissionsTrendChart() {
               tickLine={false}
               axisLine={{ stroke: "#e2e8f0" }}
               tick={(props) => {
-                const is2025 = props.payload.value === "2025";
+                const is2025 = props.payload.value === TAHUN_TERAKHIR;
                 return (
                   <text
                     x={props.x}
@@ -92,23 +94,23 @@ export default function EmissionsTrendChart() {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              ticks={[0, 400, 800, 1200, 1600]}
-              domain={[0, 1600]}
-              tickFormatter={(v) => v.toLocaleString()}
+              ticks={[0, 500000, 1000000, 1500000, 2000000]}
+              domain={[0, 2000000]}
+              tickFormatter={(v) => `${fmtAngka(v / 1000000, 1)} jt`}
             />
             <Tooltip
               content={({ active, payload, label }) => {
                 if (active && payload && payload.length) {
                   return (
                     <div className="bg-[#0b1c30] text-white p-2.5 rounded-lg shadow-xl text-[12px] space-y-1">
-                      <div className="font-bold border-b border-white/10 pb-1">Year {label}</div>
+                      <div className="font-bold border-b border-white/10 pb-1">FY {label}</div>
                       <div className="flex justify-between gap-3 text-[#ffb3b6]">
-                        <span>Actual:</span>
-                        <span className="font-bold">{payload[0]?.value} tCO₂e</span>
+                        <span>Scope 1+2:</span>
+                        <span className="font-bold">{fmtAngka(Number(payload[0]?.value))} tCO₂e</span>
                       </div>
                       <div className="flex justify-between gap-3 text-[#94a3b8]">
-                        <span>Target:</span>
-                        <span>{payload[1]?.value} tCO₂e</span>
+                        <span>Level target (estimasi tim):</span>
+                        <span>{fmtAngka(Number(payload[1]?.value))} tCO₂e</span>
                       </div>
                     </div>
                   );
@@ -123,7 +125,7 @@ export default function EmissionsTrendChart() {
               strokeWidth={2.5}
               fill="url(#trendGradient)"
               dot={(dotProps) => {
-                const is2025 = dotProps.payload.year === "2025";
+                const is2025 = dotProps.payload.year === TAHUN_TERAKHIR;
                 return (
                   <circle
                     key={dotProps.index}
