@@ -5,8 +5,7 @@ import { Search, Bell, User } from "lucide-react";
 import { useTeraStore } from "@/stores/useTeraStore";
 
 export default function TopHeader() {
-  const { globalSearchQuery, setGlobalSearchQuery, activePeriod, setActivePeriod, records } =
-    useTeraStore();
+  const { globalSearchQuery, setGlobalSearchQuery, records } = useTeraStore();
 
   const openIssuesCount = records.filter(
     (r) => (r.validationStatus === "error" || r.validationStatus === "warning") && !r.resolved
@@ -22,38 +21,14 @@ export default function TopHeader() {
             type="text"
             value={globalSearchQuery}
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
-            placeholder="Search records, findings, or scenarios... (Press '/' or Ctrl+K)"
-            className="w-full h-9 pl-9 pr-4 text-[13px] bg-white border border-[#c4c6cd]/50 rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all shadow-sm"
+            placeholder="Search records, findings, or scenarios..."
+            className="w-full h-10 pl-9 pr-4 text-[13px] bg-white border border-[#c4c6cd]/50 rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all shadow-sm"
           />
         </div>
       </div>
 
-      {/* Right: Period selector, Demo Tag, Notification & Profile */}
+      {/* Right: Notification & Profile */}
       <div className="flex items-center gap-4">
-        {/* Active Period Dropdown */}
-        <div className="flex items-center gap-2 bg-[#e5eeff] px-3 py-1.5 rounded-lg border border-[#dce9ff]">
-          <span className="text-[11px] font-semibold text-[#5c5e64] uppercase tracking-wider">
-            Period:
-          </span>
-          <select
-            value={activePeriod}
-            onChange={(e) => setActivePeriod(e.target.value)}
-            className="bg-transparent text-[13px] font-semibold text-[#0b1c30] focus:outline-none cursor-pointer"
-          >
-            <option value="FY 2025">FY 2025</option>
-            <option value="FY 2024">FY 2024</option>
-            <option value="FY 2023">FY 2023</option>
-          </select>
-        </div>
-
-        {/* Demo Indicator Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 bg-[#fff1f2] border border-[#ffdad6] px-2.5 py-1 rounded-full">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#b80035] animate-pulse" />
-          <span className="text-[11px] font-bold text-[#b80035] uppercase tracking-wider">
-            Demo Sandbox
-          </span>
-        </div>
-
         {/* Notification Bell */}
         <button
           type="button"
@@ -65,18 +40,18 @@ export default function TopHeader() {
           className="relative p-2 text-[#5c5e64] hover:text-[#0b1c30] hover:bg-white rounded-lg transition-colors border border-transparent hover:border-[#e5eeff]"
           title="Notifications"
         >
-          <Bell className="w-4 h-4" />
+          <Bell className="w-5 h-5 text-[#5c5e64]" />
           {openIssuesCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#e11d48] ring-2 ring-white" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#b80035] ring-2 ring-white" />
           )}
         </button>
 
         {/* User Pill */}
-        <div className="flex items-center gap-2 pl-2 border-l border-[#e5eeff]">
-          <div className="w-7 h-7 rounded-full bg-[#b80035] text-white flex items-center justify-center font-bold text-xs shadow-sm">
-            <User className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2.5 pl-2 cursor-pointer">
+          <div className="w-8 h-8 rounded-full bg-[#b80035] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+            <User className="w-4 h-4" />
           </div>
-          <span className="text-[13px] font-semibold text-[#0b1c30] hidden md:inline-block">
+          <span className="text-[13px] font-semibold text-[#0b1c30]">
             ESG Team
           </span>
         </div>

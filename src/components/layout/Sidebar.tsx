@@ -10,7 +10,7 @@ import {
   ArrowLeftRight,
   CloudSun,
   FlaskConical,
-  ShieldCheck,
+  FileCheck,
   HelpCircle,
 } from "lucide-react";
 
@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
   { name: "Carbon Analysis", href: "/carbon-analysis", icon: CloudSun },
   { name: "Decision Lab", href: "/decision-lab", icon: FlaskConical },
-  { name: "Audit Trail", href: "/governance", icon: ShieldCheck },
+  { name: "Audit Trail", href: "/governance", icon: FileCheck },
 ];
 
 export default function Sidebar() {

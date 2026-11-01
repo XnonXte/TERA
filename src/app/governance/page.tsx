@@ -1,22 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   ShieldCheck,
   Search,
-  Filter,
   Download,
   Lock,
+  ChevronRight,
   CheckCircle2,
-  AlertTriangle,
-  History,
+  Award,
   FileCheck,
+  Clock,
+  ChevronDown,
   Hash,
   ExternalLink,
 } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
-import KpiCard from "@/components/ui/KpiCard";
-import StatusBadge from "@/components/ui/StatusBadge";
 import { useTeraStore } from "@/stores/useTeraStore";
 
 export default function GovernancePage() {
@@ -25,136 +24,215 @@ export default function GovernancePage() {
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("All");
   const [filterObject, setFilterObject] = useState("All");
+  const [filterDate, setFilterDate] = useState("FY2025");
+  const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
-  const filteredEvents = auditEvents.filter((ev) => {
-    if (filterAction !== "All" && ev.action !== filterAction) return false;
-    if (filterObject !== "All" && ev.objectType !== filterObject) return false;
+  const filteredEvents = useMemo(() => {
+    return auditEvents.filter((ev) => {
+      if (filterAction !== "All" && ev.action !== filterAction) return false;
+      if (filterObject !== "All" && ev.objectType !== filterObject) return false;
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const matchActor = ev.actor.toLowerCase().includes(q);
-      const matchTitle = ev.objectTitle.toLowerCase().includes(q);
-      const matchId = ev.objectId.toLowerCase().includes(q);
-      const matchHash = (ev.hash || "").toLowerCase().includes(q);
-      if (!matchActor && !matchTitle && !matchId && !matchHash) return false;
-    }
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        const matchActor = ev.actor.toLowerCase().includes(q);
+        const matchTitle = ev.objectTitle.toLowerCase().includes(q);
+        const matchId = ev.objectId.toLowerCase().includes(q);
+        const matchHash = (ev.hash || "").toLowerCase().includes(q);
+        if (!matchActor && !matchTitle && !matchId && !matchHash) return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [auditEvents, filterAction, filterObject, search]);
 
-  const getActionBadgeColor = (action: string) => {
-    switch (action) {
-      case "approve":
-        return "bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]";
-      case "reject":
-        return "bg-[#fff1f2] text-[#b80035] border-[#ffdad6]";
-      case "simulate":
-        return "bg-[#f5f3ff] text-[#7c3aed] border-[#ddd6fe]";
-      default:
-        return "bg-[#eff4ff] text-[#0b1c30] border-[#dce9ff]";
-    }
+  const copyToClipboard = (hash?: string) => {
+    if (!hash) return;
+    navigator.clipboard?.writeText(hash);
+    setCopiedHash(hash);
+    setTimeout(() => setCopiedHash(null), 2000);
   };
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <PageHeader
-        badge="COMPLIANCE & GOVERNANCE"
-        title="Governance & Audit Trail"
-        description="Tamper-evident, immutable activity log tracking every data quality resolution, baseline approval, and decarbonization simulation under ISO 14064-1 compliance."
-        actions={
+    <div className="space-y-6 pb-8">
+      {/* 1. Breadcrumb */}
+      <nav className="flex items-center gap-2 text-[12px] text-[#5c5e64]">
+        <Link href="/overview" className="hover:text-[#0b1c30] transition-colors">
+          Home
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-[#5c5e64]/60" />
+        <span className="font-semibold text-[#0b1c30]">Governance &amp; Audit Trail</span>
+      </nav>
+
+      {/* 2. Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] font-bold text-[#0b1c30] tracking-[-0.8px] leading-[40px]">
+            Governance &amp; Audit Trail
+          </h1>
+          <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
+            Tamper-evident, immutable activity log tracking every data quality resolution, baseline approval, and decarbonization simulation under ISO 14064-1 compliance.
+          </p>
+        </div>
+
+        {/* 3 Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() =>
-              alert("Formal ISO 14064-1 Audit Pack exported with SHA-256 verification docket (PDF).")
+              alert("Cryptographic Verification: All 1,428 block hashes verified intact against genesis ledger.")
             }
-            className="flex items-center gap-2 px-4 py-2 bg-[#0b1c30] rounded-lg text-[13px] font-semibold text-white hover:bg-[#1a2d45] transition-colors shadow"
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[12px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
+          >
+            <Lock className="w-4 h-4 text-[#00675e]" />
+            <span>Verify Hash Chain</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              alert("Audit Certificate: ISO 14064-1 Compliance Attestation issued for FY2025.")
+            }
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[12px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
+          >
+            <Award className="w-4 h-4 text-[#5c5e64]" />
+            <span>Generate Certificate</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              alert("Formal ISO 14064-1 Audit Pack exported with SHA-256 verification docket (PDF/ZIP).")
+            }
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#b80035] rounded-[8px] text-[13px] font-semibold text-white hover:bg-[#9f002d] transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" />
             <span>Export Formal Audit Pack</span>
           </button>
-        }
-      />
-
-      {/* KPI Row (matching Frame 111:2393) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="Total Audit Events"
-          value="1,428"
-          unit="Events"
-          badge={{ text: "100% Cryptographic", variant: "green" }}
-          subtitle="Real-time append-only ledger"
-          icon={<History className="w-4 h-4 text-[#0b1c30]" />}
-        />
-        <KpiCard
-          label="Baseline Ratifications"
-          value="4"
-          unit="Signed"
-          subtitle="v2023.1, v2023.2, v2024.1, v2025.0-Draft"
-          badge={{ text: "Formal ISO Stamp", variant: "default" }}
-          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
-        />
-        <KpiCard
-          label="Decarbonization Simulations"
-          value="12"
-          unit="Scenarios"
-          subtitle="Sensitivity stress tests recorded"
-          icon={<FileCheck className="w-4 h-4 text-[#7c3aed]" />}
-        />
-        <KpiCard
-          label="Integrity Verification"
-          value="100%"
-          unit="Intact"
-          delta={{ value: "Valid", isPositiveGood: true, label: "Hash Chain" }}
-          subtitle="Zero unauthorized restatements"
-          icon={<Lock className="w-4 h-4 text-[#059669]" />}
-        />
+        </div>
       </div>
 
-      {/* Search and Filter Controls */}
-      <div className="bg-white p-4 rounded-xl border border-[#e5eeff] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-[#5c5e64] absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* 3. 4 KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Total Events */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Total Audit Events
+            </div>
+            <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
+              1,428 Events
+            </div>
+          </div>
+          <div className="text-[12px] text-[#5c5e64]">
+            Real-time append-only ledger
+          </div>
+        </div>
+
+        {/* Card 2: Baseline Ratifications */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Baseline Ratifications
+            </div>
+            <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
+              4 Signed
+            </div>
+          </div>
+          <div className="text-[12px] text-[#5c5e64] truncate">
+            v2023.1, v2023.2, v2024.1, v2025.0
+          </div>
+        </div>
+
+        {/* Card 3: Decarbonization Simulations */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Decarbonization Simulations
+            </div>
+            <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
+              12 Scenarios
+            </div>
+          </div>
+          <div className="text-[12px] text-[#5c5e64]">
+            Sensitivity stress tests recorded
+          </div>
+        </div>
+
+        {/* Card 4: Integrity Verification */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Integrity Verification
+            </div>
+            <div className="text-[30px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
+              100% Intact
+            </div>
+          </div>
+          <div className="text-[12px] text-[#00675e] font-semibold">
+            Zero unauthorized restatements
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Filter & Search Bar */}
+      <div className="bg-white p-4 rounded-[12px] border border-[#e5eeff] shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="relative w-full lg:w-96">
+          <Search className="w-4 h-4 text-[#5c5e64] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search Actor, Event, Hash or Object ID..."
-            className="w-full h-9 pl-9 pr-3 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035]"
+            placeholder="Search by actor, event ID, hash or object..."
+            className="w-full h-10 pl-9 pr-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Action Filter */}
-          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Action:</span>
+          <div className="relative">
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="All">All Actions</option>
-              <option value="approve">Approve</option>
+              <option value="All">All Action Types</option>
+              <option value="approve">Approve / Ratify</option>
               <option value="reject">Reject</option>
-              <option value="update">Update</option>
-              <option value="simulate">Simulate</option>
-              <option value="review">Review</option>
+              <option value="update">Update / Resolve</option>
+              <option value="simulate">Simulate Scenario</option>
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {/* Object Filter */}
-          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Object:</span>
+          <div className="relative">
             <select
               value={filterObject}
               onChange={(e) => setFilterObject(e.target.value)}
-              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
               <option value="All">All Objects</option>
               <option value="baseline">Baseline Version</option>
-              <option value="record">Emission Record</option>
+              <option value="record">Telemetry Record</option>
               <option value="scenario">Simulation Scenario</option>
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Date Filter */}
+          <div className="relative">
+            <select
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
+            >
+              <option value="FY2025">Date: FY2025 (All)</option>
+              <option value="Q1">Q1 2025</option>
+              <option value="Q2">Q2 2025</option>
+              <option value="Q3">Q3 2025</option>
+              <option value="Q4">Q4 2025</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {(filterAction !== "All" || filterObject !== "All" || search !== "") && (
@@ -165,106 +243,217 @@ export default function GovernancePage() {
                 setFilterObject("All");
                 setSearch("");
               }}
-              className="text-[12px] font-semibold text-[#b80035] hover:underline"
+              className="text-[12px] font-semibold text-[#b80035] hover:underline px-2 py-1"
             >
-              Reset
+              Clear filters
             </button>
           )}
         </div>
       </div>
 
-      {/* Immutable Event Timeline & Ledger List */}
-      <div className="space-y-3">
-        {filteredEvents.length === 0 ? (
-          <div className="bg-white rounded-xl border border-[#e5eeff] p-12 text-center text-[#5c5e64] shadow-sm">
-            No audit trail events match the current filter criteria.
+      {/* 5. Main 2-Column Content: Audit Log Ledger + Approval Chain */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left Column: Audit Log Ledger Table (8 cols) */}
+        <div className="lg:col-span-8 bg-white rounded-[12px] border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="p-5 border-b border-[#e5eeff] flex items-center justify-between">
+            <div>
+              <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                Audit Log Ledger
+              </h3>
+              <p className="text-[12px] text-[#5c5e64] mt-0.5">
+                Append-only cryptographic records signed per ISO 14064-1
+              </p>
+            </div>
+            <span className="text-[11px] font-semibold text-[#5c5e64] bg-[#eff4ff] px-2.5 py-1 rounded-[6px]">
+              {filteredEvents.length} Events
+            </span>
           </div>
-        ) : (
-          filteredEvents.map((ev) => (
-            <div
-              key={ev.id}
-              className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm hover:border-[#b80035]/30 transition-all space-y-3"
-            >
-              {/* Event Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f1f5f9]">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#0b1c30] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {ev.actorInitials}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-bold text-[#0b1c30]">
-                        {ev.actor}
-                      </span>
-                      <span className="text-[11px] text-[#5c5e64]">
-                        ({ev.actorRole})
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-[#5c5e64]">
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-[13px]">
+              <thead>
+                <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">TIMESTAMP</th>
+                  <th className="py-3 px-4">ACTOR &amp; ROLE</th>
+                  <th className="py-3 px-4">ACTION</th>
+                  <th className="py-3 px-4">OBJECT / JUSTIFICATION</th>
+                  <th className="py-3 px-4">SHA-256 HASH</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f1f5f9]">
+                {filteredEvents.map((ev) => (
+                  <tr key={ev.id} className="hover:bg-[#f8f9ff] transition-colors">
+                    {/* Timestamp */}
+                    <td className="py-3.5 px-4 text-[#5c5e64] text-[12px] whitespace-nowrap">
                       {ev.timestamp}
-                    </div>
-                  </div>
-                </div>
+                    </td>
 
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getActionBadgeColor(
-                      ev.action
-                    )}`}
-                  >
-                    {ev.action}
-                  </span>
-                  {ev.statusBadge && (
-                    <span className="text-[11px] font-semibold bg-[#e5eeff] text-[#0b1c30] px-2.5 py-0.5 rounded-full">
-                      {ev.statusBadge}
+                    {/* Actor */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#0b1c30] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                          {ev.actorInitials}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#0b1c30] text-[12px]">
+                            {ev.actor}
+                          </div>
+                          <div className="text-[10px] text-[#5c5e64]">
+                            {ev.actorRole}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Action */}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          ev.action === "approve"
+                            ? "bg-[#dcfce7] text-[#15803d]"
+                            : ev.action === "reject"
+                            ? "bg-[#ffdad6] text-[#b80035]"
+                            : ev.action === "simulate"
+                            ? "bg-[#eff4ff] text-[#00675e]"
+                            : "bg-[#e5eeff] text-[#0b1c30]"
+                        }`}
+                      >
+                        {ev.action}
+                      </span>
+                    </td>
+
+                    {/* Object & Details */}
+                    <td className="py-3.5 px-4 max-w-xs">
+                      <div className="font-bold text-[#0b1c30] text-[12px] truncate">
+                        {ev.objectTitle}
+                      </div>
+                      <div className="text-[11px] text-[#5c5e64] truncate mt-0.5">
+                        {ev.reason}
+                      </div>
+                    </td>
+
+                    {/* Hash */}
+                    <td className="py-3.5 px-4">
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(ev.hash)}
+                        title="Click to copy full SHA-256 hash"
+                        className="font-mono text-[11px] text-[#5c5e64] hover:text-[#b80035] bg-[#eff4ff] px-2 py-1 rounded border border-[#dce9ff] flex items-center gap-1.5 transition-colors"
+                      >
+                        <Hash className="w-3 h-3 text-[#5c5e64]" />
+                        <span>{ev.hash ? `${ev.hash.slice(0, 10)}…` : "0x7f2a4c…"}</span>
+                        {copiedHash === ev.hash && (
+                          <span className="text-[9px] text-[#00675e] font-bold">Copied!</span>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right Column: Approval Sign-off Chain (4 cols) */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Sign-off Chain Container */}
+          <div className="bg-white rounded-[12px] border border-[#e5eeff] p-5 shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e5eeff]">
+              <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                Approval Sign-off Chain
+              </h3>
+              <ShieldCheck className="w-4 h-4 text-[#00675e]" />
+            </div>
+
+            {/* Vertical Stepper Timeline */}
+            <div className="space-y-4 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#dce9ff]">
+              {/* Step 1 */}
+              <div className="flex items-start gap-3.5 relative">
+                <div className="w-7 h-7 rounded-full bg-[#00675e] text-white flex items-center justify-center shrink-0 z-10 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#0b1c30]">
+                      1. Data Custodian Lead
                     </span>
-                  )}
+                    <span className="text-[10px] text-[#00675e] font-semibold">Completed</span>
+                  </div>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">A. Santoso</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">10 Jan 2025 • Telemetry verified</p>
                 </div>
               </div>
 
-              {/* Event Body */}
-              <div className="space-y-1.5">
-                <div className="text-[14px] font-semibold text-[#0b1c30]">
-                  {ev.objectTitle}
+              {/* Step 2 */}
+              <div className="flex items-start gap-3.5 relative">
+                <div className="w-7 h-7 rounded-full bg-[#00675e] text-white flex items-center justify-center shrink-0 z-10 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[12px] bg-[#eff4ff] p-3 rounded-lg border border-[#dce9ff]">
-                  <div>
-                    <span className="text-[#5c5e64]">Previous State: </span>
-                    <span className="font-semibold text-[#0b1c30]">
-                      {ev.previousValue}
+                <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#0b1c30]">
+                      2. ESG Data Quality Controller
                     </span>
+                    <span className="text-[10px] text-[#00675e] font-semibold">Completed</span>
                   </div>
-                  <div>
-                    <span className="text-[#5c5e64]">New State: </span>
-                    <span className="font-bold text-[#b80035]">
-                      {ev.newValue}
-                    </span>
-                  </div>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">M. Dewi</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">14 Jan 2025 • DQ-01 resolved</p>
                 </div>
               </div>
 
-              {/* Event Reason & Hash Footer */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11.5px] text-[#5c5e64]">
-                <div className="flex items-center gap-2 max-w-xl truncate">
-                  <span className="font-bold text-[#0b1c30]">Justification:</span>
-                  <span className="truncate">{ev.reason}</span>
+              {/* Step 3 */}
+              <div className="flex items-start gap-3.5 relative">
+                <div className="w-7 h-7 rounded-full bg-[#00675e] text-white flex items-center justify-center shrink-0 z-10 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4" />
                 </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  {ev.evidence && (
-                    <span className="text-[#0b1c30] bg-[#f8f9ff] px-2 py-0.5 rounded border border-[#e5eeff] truncate max-w-xs">
-                      {ev.evidence}
+                <div className="flex-1 bg-[#eff4ff]/60 p-3 rounded-[8px] border border-[#dce9ff]/60">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#0b1c30]">
+                      3. Chief Sustainability Officer
                     </span>
-                  )}
-                  <span className="flex items-center gap-1 font-mono text-[11px] text-[#5c5e64] bg-[#eff4ff] px-2 py-0.5 rounded">
-                    <Hash className="w-3 h-3 text-[#5c5e64]" />
-                    <span>{ev.hash}</span>
-                  </span>
+                    <span className="text-[10px] text-[#00675e] font-semibold">Completed</span>
+                  </div>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">Dr. R. Pratama</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">20 Jan 2025 • Baseline signed</p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex items-start gap-3.5 relative">
+                <div className="w-7 h-7 rounded-full bg-[#d97706] text-white flex items-center justify-center shrink-0 z-10 shadow-sm">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div className="flex-1 bg-[#fffbeb] p-3 rounded-[8px] border border-[#fef3c7]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#78350f]">
+                      4. Board Audit &amp; Risk Committee
+                    </span>
+                    <span className="text-[10px] text-[#d97706] font-bold">In Review</span>
+                  </div>
+                  <p className="text-[12px] text-[#0b1c30] mt-1 font-medium">Audit Committee</p>
+                  <p className="text-[10px] text-[#5c5e64] mt-0.5">Pending Q1 Board Docket Review</p>
                 </div>
               </div>
             </div>
-          ))
-        )}
+          </div>
+
+          {/* Active ISO Certification Box */}
+          <div className="bg-[#eff4ff] rounded-[12px] p-5 border border-[#dce9ff] space-y-2">
+            <div className="flex items-center gap-2 text-[#0b1c30]">
+              <Award className="w-4 h-4 text-[#00675e]" />
+              <h4 className="text-[13px] font-bold">
+                ISO 14064-1:2018 Validated
+              </h4>
+            </div>
+            <p className="text-[11px] text-[#5c5e64] leading-relaxed">
+              Third-party verified by <strong>TUV SUD Indonesia</strong>. Scope 1 &amp; 2 organizational inventory adheres to MEMR #189 Gazette &amp; GHG Protocol Corporate Standard.
+            </p>
+            <div className="text-[10px] text-[#5c5e64] pt-2 border-t border-[#dce9ff] flex items-center justify-between">
+              <span>Certificate: ID-GHG-2025-089</span>
+              <span className="text-[#00675e] font-semibold">Valid thru Dec 2026</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
