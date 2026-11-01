@@ -5,9 +5,9 @@ import TopHeader from "@/components/layout/TopHeader";
 import FindingDetailDrawer from "@/components/drawers/FindingDetailDrawer";
 
 export const metadata: Metadata = {
-  title: "TERA | Trusted ESG Reporting & Action - Telkomsel",
+  title: "TERA · Prototipe Terbatas",
   description:
-    "Auditable Decarbonization & Scope 1/2 Greenhouse Gas Emissions Governance Platform for Telkomsel.",
+    "Prototipe terbatas TERA dengan data demo dari laporan keberlanjutan. Persetujuan disimulasikan; bukan integrasi produksi.",
   icons: {
     icon: "/tera-logo.png",
   },

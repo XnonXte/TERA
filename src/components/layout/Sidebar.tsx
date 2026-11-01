@@ -26,8 +26,11 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
   { name: "Carbon Analysis", href: "/carbon-analysis", icon: CloudSun },
   { name: "Decision Lab", href: "/decision-lab", icon: FlaskConical },
-  { name: "Audit Trail", href: "/governance", icon: FileCheck },
+  { name: "Governance & Jejak Perubahan", href: "/governance", icon: FileCheck },
 ];
+
+// Halaman yang masih spesifikasi (belum dibangun pada prototipe ini).
+const SPEK = ["/carbon-analysis", "/decision-lab", "/governance"];
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -68,6 +71,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                title={SPEK.includes(item.href) ? "Spesifikasi" : undefined}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                   active
                     ? "bg-[#b80035] text-[#ffffff] shadow-sm font-semibold"
@@ -90,28 +94,25 @@ export default function Sidebar() {
       <div className="p-4 border-t border-[#1f2937]/80 space-y-3">
         <button
           type="button"
-          onClick={() =>
-            alert(
-              "TERA ESG Documentation:\n• ISO 14064-1 Organizational Footprint Reconciliation\n• Telkomsel Scope 1 & 2 Methodology Gazette MEMR #189\n• Science Based Targets initiative (SBTi) 2030 Pathway"
-            )
-          }
+          disabled
+          title="Spesifikasi"
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-[#c4c6cd] hover:text-white hover:bg-white/5 transition-colors"
         >
           <HelpCircle className="w-4 h-4 shrink-0 text-[#c4c6cd]" />
-          <span>Help & Documentation</span>
+          <span>Bantuan & Dokumentasi</span>
         </button>
 
         {/* User Card */}
         <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.06] border border-white/5">
           <div className="w-8 h-8 rounded-full bg-[#b80035] text-[#fffaf9] flex items-center justify-center font-bold text-xs shrink-0 shadow">
-            ET
+            —
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[13px] font-medium text-white truncate leading-tight">
-              ESG Team
+              Pengguna demo
             </span>
             <span className="text-[11px] text-[#c4c6cd] truncate leading-tight mt-0.5">
-              Telkomsel (Demo)
+              Peran disimulasikan · tanpa login
             </span>
           </div>
         </div>
