@@ -15,7 +15,7 @@ export default function CostEffectivenessChart({
   options,
   onToggleOption,
 }: CostEffectivenessChartProps) {
-  // Sort options with valid cost effectiveness in ascending order of MAC ratio
+  // Urutkan skenario yang biayanya terisi dari biaya per tCO2e terendah
   const validOptions = [...options]
     .filter((o) => o.costEffectiveness !== null)
     .sort((a, b) => (a.costEffectiveness || 0) - (b.costEffectiveness || 0));
