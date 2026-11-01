@@ -2,273 +2,533 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Flame, ShieldCheck, ArrowRight, TrendingUp, RotateCw, Sliders } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
-import KpiCard from "@/components/ui/KpiCard";
+import {
+  ShieldCheck,
+  FileText,
+  Flame,
+  TrendingUp,
+  LayoutGrid,
+  ArrowLeftRight,
+  ArrowRight,
+  Clock,
+  AlertTriangle,
+  Target,
+  FlaskConical,
+} from "lucide-react";
 import EmissionsTrendChart from "@/components/charts/EmissionsTrendChart";
 import EmissionsDonutChart from "@/components/charts/EmissionsDonutChart";
-import StatusBadge from "@/components/ui/StatusBadge";
-import { useTeraStore } from "@/stores/useTeraStore";
-import {
-  SUMBER_DASHBOARD,
-  SATUAN,
-  TAHUN,
-  tahunDariPeriode,
-  nilaiTahun,
-  perubahanVsSebelumnya,
-  komposisi,
-  kenaikanTerakhirVsAwal,
-  LEVEL_TARGET,
-  deretTren,
-} from "@/lib/dashboard";
+import { useSeedStore } from "@/stores/useSeedStore";
 import { SEED, sumberLaporan } from "@/lib/seed";
-import { INFO_ATURAN, TEKS_HASIL } from "@/lib/dq";
-import { REVISI } from "@/lib/reconciliation";
-import { fmtAngka, fmtBertanda, fmtPersen, KOSONG } from "@/lib/format";
+import { TAHUN, nilaiTahun, perubahanVsSebelumnya, kenaikanTerakhirVsAwal, SUMBER_DASHBOARD } from "@/lib/dashboard";
+import { REVISI, VERSI } from "@/lib/reconciliation";
+import { TEKS_SIMULASI } from "@/lib/simulasi";
+import { fmtAngka, fmtPersen, KOSONG } from "@/lib/format";
+
+// Tautan yang belum dibangun: dinonaktifkan tanpa mengubah bentuk.
+const tahanTautan = (e: React.MouseEvent) => e.preventDefault();
 
 export default function OverviewPage() {
-  const router = useRouter();
-  const { activePeriod, hasilAturan, jalankanAturanDQ, bukaCek, baselineAktif } = useTeraStore();
+  const { hasilAturan, jalankanAturanDQ, bukaCek, baselineAktif } = useSeedStore();
 
-  // Kartu dan daftar pemeriksaan memakai hasil aturan yang dijalankan di browser.
+  // Hasil aturan α/β dijalankan di browser bila belum ada.
   useEffect(() => {
     if (!hasilAturan) jalankanAturanDQ();
   }, [hasilAturan, jalankanAturanDQ]);
 
-  const tahun = tahunDariPeriode(activePeriod);
+  const tahun = TAHUN[TAHUN.length - 1];
+  const sebelum = TAHUN[TAHUN.length - 2];
   const n = nilaiTahun(tahun);
+  const nPrev = nilaiTahun(sebelum);
   const ubah = perubahanVsSebelumnya(tahun);
-  const tahunSebelum = TAHUN[TAHUN.indexOf(tahun) - 1];
-  const komp = komposisi(tahun);
   const naik = kenaikanTerakhirVsAwal();
   const r = hasilAturan?.ringkasan;
-  const cekDitandai = SEED.cek_32.filter((c) => r?.ditandai.includes(c.no));
+  const total = SEED.cek_32.length;
+  const pct = (x: number) => `${((x / total) * 100).toFixed(1).replace(".", ",")}%`;
+  const ditandai = SEED.cek_32.filter((c) => r?.ditandai.includes(c.no));
+  const [c1, c2, c3] = ditandai;
   const kodeAlasan = Array.from(new Set(REVISI.map((x) => x.kodeAlasan))).join(", ");
+  const [v1, v2, v3] = VERSI;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <PageHeader
-        badge="DASHBOARD"
-        title="Ringkasan Emisi Scope 1 & 2"
-        description={`FY ${tahun}: emisi Scope 1 dan 2, hasil pemeriksaan data, dan status rekonsiliasi baseline dari laporan keberlanjutan Telkomsel. Pilih periode di bagian atas untuk FY ${TAHUN.join(", ")}.`}
-        actions={
+    <div className="space-y-6 pb-8">
+      {/* 1. Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] font-bold text-[#0b1c30] tracking-[-0.8px] leading-[40px]">
+            Ringkasan emisi Scope 1 & 2
+          </h1>
+          <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
+            <span>Data emisi untuk </span>
+            <span className="font-semibold text-[#0b1c30]">FY {tahun}</span>
+            <span>. </span>
+            <span className="text-[#5c5e64]/70">
+              Sumber: {SUMBER_DASHBOARD}
+            </span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Simulasi Badge */}
+          <div className="flex items-center gap-2 bg-[#eff4ff] px-3.5 py-2 rounded-[8px] border border-[#dce9ff]" title={TEKS_SIMULASI}>
+            <ShieldCheck className="w-4 h-4 text-[#00675e]" />
+            <div className="text-[11px] text-[#5c5e64] leading-tight font-medium">
+              <p className="font-semibold text-[#0b1c30]">Simulasi</p>
+              <p>Prototipe terbatas</p>
+            </div>
+          </div>
+
+          {/* View Reports Button */}
           <button
             type="button"
-            onClick={jalankanAturanDQ}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
+            disabled
+            title="Spesifikasi"
+            className="flex items-center gap-2 bg-[#b80035] text-white text-[13px] font-medium px-4 py-2.5 rounded-[8px] hover:bg-[#9f002d] transition-colors shadow-sm"
           >
-            <RotateCw className="w-4 h-4 text-[#5c5e64]" />
-            <span>Jalankan aturan</span>
+            <FileText className="w-4 h-4" />
+            <span>Lihat laporan</span>
           </button>
-        }
-      />
-
-      {/* 4 Summary KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label={`Scope 1+2 · FY ${tahun}`}
-          value={fmtAngka(n?.scope1_2)}
-          unit={SATUAN}
-          delta={
-            ubah
-              ? { value: fmtPersen(ubah.percentage), isPositiveGood: false, label: `vs FY ${tahunSebelum}` }
-              : { value: KOSONG, isNeutral: true, label: "tanpa pembanding" }
-          }
-          subtitle={ubah ? `${fmtBertanda(ubah.absolute)} ${SATUAN}` : undefined}
-          footnote={`Sumber: ${SUMBER_DASHBOARD}`}
-          icon={<Flame className="w-4 h-4 text-[#b80035]" />}
-        />
-        <KpiCard
-          label="Pemeriksaan ditandai"
-          value={r ? `${r.ditandai.length} dari ${r.tercakup}` : KOSONG}
-          badge={{ text: "In-sample", variant: "amber" }}
-          subtitle={
-            r ? `${r.ditandai.map((x) => `#${x}`).join(", ")} · ${r.diLuarCakupan.length} di luar cakupan` : "Aturan belum dijalankan"
-          }
-          footnote="Sumber: dihitung aplikasi"
-          onClick={() => router.push("/data-quality")}
-          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
-        />
-        <KpiCard
-          label={`Kenaikan ${naik.akhir} vs ${naik.awal}`}
-          value={fmtPersen(naik.hitungUlangPct)}
-          badge={{
-            text: `Callout ${fmtPersen(naik.calloutPct, 2, false)}${r?.ditandai.includes(19) ? " · ditandai #19" : " · #19"}`,
-            variant: "red",
-          }}
-          footnote={`Sumber: ${naik.sumberTabel} dan ${naik.sumberCallout}.`}
-          onClick={() => router.push("/data-quality?cek=19")}
-          icon={<TrendingUp className="w-4 h-4 text-[#0b1c30]" />}
-        />
-        <KpiCard
-          label="Level target"
-          value={fmtAngka(LEVEL_TARGET.nilai)}
-          unit={SATUAN}
-          badge={{ text: LEVEL_TARGET.status, variant: "amber" }}
-          delta={{
-            value: fmtAngka(LEVEL_TARGET.gap_ke_target),
-            isNeutral: true,
-            label: `gap FY ${TAHUN[TAHUN.length - 1]}`,
-          }}
-          info={LEVEL_TARGET.label}
-          footnote="Sumber: hitungan tim"
-          icon={<Sliders className="w-4 h-4 text-[#b80035]" />}
-        />
-      </div>
-
-      {/* Visual Analytics Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <EmissionsTrendChart data={deretTren()} satuan={SATUAN} sumber={SUMBER_DASHBOARD} />
-        </div>
-        <div className="lg:col-span-1">
-          <EmissionsDonutChart
-            tahun={tahun}
-            scope1={komp.scope1}
-            scope2={komp.scope2}
-            pctScope1={komp.pctScope1}
-            pctScope2={komp.pctScope2}
-            total={n?.scope1_2 ?? 0}
-            satuan={SATUAN}
-            sumber={SUMBER_DASHBOARD}
-          />
         </div>
       </div>
 
-      {/* Bottom Row: Flagged Checks & Reconciliation Snapshot */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Flagged checks */}
-        <div className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[14px] font-bold text-[#0b1c30]">Pemeriksaan ditandai</h3>
+      {/* 2. Key Performance Indicators (4 KPI Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Total Emissions */}
+        <Link
+          href="/carbon-analysis"
+          className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] hover:border-[#b80035]/30 transition-all flex flex-col justify-between h-[180px]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-[#b80035] flex items-center justify-center shrink-0">
+              <Flame className="w-4 h-4 text-white" />
             </div>
-            <Link
-              href="/data-quality"
-              className="text-[12px] font-semibold text-[#b80035] hover:underline flex items-center gap-1"
-            >
-              <span>Lihat semua ({SEED.cek_32.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <span className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Emisi Scope 1+2 · FY {tahun}
+            </span>
           </div>
 
-          <div className="divide-y divide-[#f1f5f9]">
-            {cekDitandai.map((c) => (
-              <div
-                key={c.no}
-                onClick={() => bukaCek(c.no)}
-                className="py-3 flex items-start justify-between gap-4 cursor-pointer hover:bg-[#f8f9ff] px-2 rounded-lg transition-colors"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[12px] font-bold text-[#0b1c30]">#{c.no}</span>
-                    <span className="text-[11px] text-[#5c5e64]">
-                      {c.aturan_prototipe !== "di_luar_cakupan" &&
-                        `Aturan ${INFO_ATURAN[c.aturan_prototipe].simbol} (${INFO_ATURAN[c.aturan_prototipe].ruleId})`}
-                    </span>
-                    <StatusBadge status="warning" size="sm" label={TEKS_HASIL.ditandai} />
-                  </div>
-                  <div className="text-[13px] font-medium text-[#0b1c30]">{c.item}</div>
-                  <div className="text-[11px] text-[#5c5e64]">Sumber: {sumberLaporan(c.laporan, c.halaman_cetak)}</div>
-                </div>
-
-                <button
-                  type="button"
-                  className="px-2.5 py-1 text-[11px] font-semibold text-[#b80035] bg-[#fff1f2] rounded border border-[#ffdad6] hover:bg-[#ffe4e6] shrink-0"
-                >
-                  Lihat detail
-                </button>
-              </div>
-            ))}
-            {!r && <div className="py-3 px-2 text-[13px] text-[#5c5e64]">Aturan belum dijalankan.</div>}
-          </div>
-        </div>
-
-        {/* Baseline Reconciliation Status */}
-        <div className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[14px] font-bold text-[#0b1c30]">Baseline Reconciliation</h3>
-              <StatusBadge
-                status={baselineAktif ? "approved" : "pending_review"}
-                label={baselineAktif ? "Approved (simulasi)" : "Simulasi"}
-                size="sm"
-              />
+            <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight">
+              {fmtAngka(n?.scope1_2)}
             </div>
-            <p className="text-[12px] text-[#5c5e64]">
-              Tiga versi baseline Scope 1+2 2023 dan revisi lintas laporan. Persetujuan disimulasikan.
-            </p>
+          </div>
 
-            <div className="mt-4 p-4 bg-[#eff4ff] rounded-xl border border-[#dce9ff] space-y-3">
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-[#5c5e64]">Baseline aktif (simulasi):</span>
-                <span className="font-bold text-[#0b1c30]">{baselineAktif ?? "Belum ada"}</span>
+          <div className="text-[11px] text-[#5c5e64] tracking-[0.11px]">
+            <span>FY {sebelum}: </span>
+            <span className="font-bold text-[#0b1c30]">{fmtAngka(nPrev?.scope1_2)}</span>
+            <span className="font-bold text-[#0b1c30]"> tCO₂e ({fmtPersen(ubah?.percentage)})</span>
+          </div>
+        </Link>
+
+        {/* Card 2: YoY Trajectory */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[180px]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-[#b80035] flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Kenaikan {naik.akhir} vs {naik.awal}
+            </span>
+          </div>
+
+          <div>
+            <div className="text-[30px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight">
+              {fmtPersen(naik.hitungUlangPct)}
+            </div>
+          </div>
+
+          <div className="text-[11px] text-[#5c5e64] tracking-[0.11px] truncate">
+            Sumber: {naik.sumberTabel} dan hlm 147
+          </div>
+        </div>
+
+        {/* Card 3: Data Quality Findings */}
+        <Link
+          href="/data-quality"
+          className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] hover:border-[#b80035]/30 transition-all flex flex-col justify-between h-[180px]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-[#b80035] flex items-center justify-center shrink-0">
+              <LayoutGrid className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Pemeriksaan ditandai
+            </span>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <span className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight">
+              {r ? r.ditandai.length : KOSONG}
+            </span>
+            <span className="text-[13px] font-medium text-[#5c5e64]">
+              dari {r ? r.tercakup : KOSONG}
+            </span>
+          </div>
+
+          <div className="text-[11px] text-[#5c5e64] tracking-[0.11px]">
+            Aturan α/β · in-sample
+          </div>
+        </Link>
+
+        {/* Card 4: Reconciliation Status */}
+        <Link
+          href="/reconciliation"
+          className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] hover:border-[#b80035]/30 transition-all flex flex-col justify-between h-[180px]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-[#b80035] flex items-center justify-center shrink-0">
+              <ArrowLeftRight className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Status rekonsiliasi
+            </span>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <span className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight">
+              {baselineAktif ?? "Belum ada"}
+            </span>
+            <span className="text-[13px] font-medium text-[#5c5e64]">
+              baseline aktif (simulasi)
+            </span>
+          </div>
+
+          <div className="text-[11px] text-[#5c5e64] tracking-[0.11px]">
+            {REVISI.length} revisi · kode alasan {kodeAlasan}
+          </div>
+        </Link>
+      </div>
+
+      {/* 3. Section - Visual Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-8">
+          <EmissionsTrendChart />
+        </div>
+        <div className="lg:col-span-4">
+          <EmissionsDonutChart />
+        </div>
+      </div>
+
+      {/* 4. Section - Operational Health (3 Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card A: Data Quality Summary */}
+        <Link
+          href="/data-quality"
+          className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2px_rgba(0,0,0,0.03)] hover:border-[#b80035]/30 transition-all flex flex-col justify-between h-[290px]"
+        >
+          <div>
+            <div className="flex items-center justify-between pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#b80035]" />
+                <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                  Ringkasan pemeriksaan data
+                </h3>
               </div>
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-[#5c5e64]">Revisi lintas laporan:</span>
-                <span className="font-bold text-[#b80035]">{REVISI.length} metrik</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#5c5e64]" />
+            </div>
+
+            <div className="flex items-center justify-between py-1 text-[13px]">
+              <span className="text-[#5c5e64]">Total pemeriksaan</span>
+              <span className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                {total}
+              </span>
+            </div>
+
+            {/* Segmented Quality Progress Bar */}
+            <div className="w-full h-3 rounded-full overflow-hidden flex bg-[#dce9ff] mt-2 mb-3">
+              <div className="bg-[#00675e] h-full" style={{ width: r ? pct(r.tidakDitandai) : "0%" }} title="Tidak ditandai" />
+              <div className="bg-[#f59e0b] h-full" style={{ width: r ? pct(r.ditandai.length) : "0%" }} title="Ditandai · Warning" />
+              <div className="bg-[#ba1a1a] h-full" style={{ width: r ? pct(r.diLuarCakupan.length) : "0%" }} title="Di luar cakupan" />
+            </div>
+
+            {/* Detailed Row Status Indicators */}
+            <div className="space-y-2 text-[11px]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#00675e]" />
+                  <span className="text-[#5c5e64]">Tidak ditandai</span>
+                </div>
+                <span className="font-medium text-[#0b1c30]">{r ? `${r.tidakDitandai} pemeriksaan (${pct(r.tidakDitandai)})` : KOSONG}</span>
               </div>
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-[#5c5e64]">Kode alasan revisi:</span>
-                <span className="font-bold text-[#b80035]">{kodeAlasan}</span>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
+                  <span className="text-[#5c5e64]">Ditandai · Warning</span>
+                </div>
+                <span className="font-medium text-[#0b1c30]">{r ? `${r.ditandai.length} pemeriksaan (${pct(r.ditandai.length)})` : KOSONG}</span>
               </div>
-              <div className="pt-2 border-t border-[#dce9ff] text-[11px] text-[#5c5e64]">
-                Sumber: seed (tiga versi baseline 2023 dan revisi lintas laporan).
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#ba1a1a]" />
+                  <span className="text-[#5c5e64]">Di luar cakupan</span>
+                </div>
+                <span className="font-bold text-[#ba1a1a]">{r ? `${r.diLuarCakupan.length} pemeriksaan (${pct(r.diLuarCakupan.length)})` : KOSONG}</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-end">
-            <Link
-              href="/reconciliation"
-              className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0b1c30] text-white font-semibold text-[13px] hover:bg-[#1a2d45] transition-colors flex items-center justify-center gap-2"
-            >
-              <span>Buka Baseline Reconciliation</span>
-              <ArrowRight className="w-4 h-4" />
+          <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-[11px]">
+            <span className="text-[#5c5e64]">
+              Dalam cakupan aturan: <strong className="text-[#0b1c30]">{r ? r.tercakup : KOSONG}</strong>
+            </span>
+            <span className="text-[#b80035] font-semibold flex items-center gap-1">
+              Lihat →
+            </span>
+          </div>
+        </Link>
+
+        {/* Card B: Reconciliation Status */}
+        <Link
+          href="/reconciliation"
+          className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2px_rgba(0,0,0,0.03)] hover:border-[#b80035]/30 transition-all flex flex-col justify-between h-[290px]"
+        >
+          <div>
+            <div className="flex items-center justify-between pb-3">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-[#b80035]" />
+                <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                  Versi baseline Scope 1+2 2023
+                </h3>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-[#5c5e64]" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="bg-[#eff4ff] rounded-[8px] p-2.5 flex items-center justify-between text-[11px]">
+                <span className="text-[#5c5e64]">{v1.versi}</span>
+                <span className="font-bold text-[#0b1c30] flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#00675e]" />
+                  {fmtAngka(v1.nilai)} tCO₂e
+                </span>
+              </div>
+
+              <div className="bg-[#eff4ff] rounded-[8px] p-2.5 flex items-center justify-between text-[11px]">
+                <span className="text-[#5c5e64]">{v2.versi}</span>
+                <span className="font-bold text-[#b80035]">{fmtAngka(v2.nilai)} tCO₂e</span>
+              </div>
+
+              <div className="bg-[#eff4ff] rounded-[8px] p-2.5 flex items-center justify-between text-[11px]">
+                <span className="text-[#5c5e64]">{v3.versi}</span>
+                <span className="font-bold text-[#0b1c30]">{fmtAngka(v3.nilai)} tCO₂e</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-[11px]">
+            <span className="text-[#5c5e64]">
+              Baseline aktif (simulasi): <strong className="text-[#0b1c30]">{baselineAktif ?? "Belum ada"}</strong>
+            </span>
+            <span className="text-[#b80035] font-semibold flex items-center gap-1">
+              Buka rekonsiliasi →
+            </span>
+          </div>
+        </Link>
+
+        {/* Card C: Priority Actions */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[290px]">
+          <div>
+            <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-[#b80035]" />
+                <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                  Pemeriksaan ditandai
+                </h3>
+              </div>
+              <Link href="/data-quality" className="text-[11px] font-bold text-[#b80035] hover:underline">
+                Lihat semua →
+              </Link>
+            </div>
+
+            <div className="space-y-2 mt-2">
+              {/* Action 1 */}
+              <div
+                onClick={() => c1 && bukaCek(c1.no)}
+                className="p-2 rounded-[8px] hover:bg-[#f8f9ff] cursor-pointer transition-colors flex items-center justify-between gap-2"
+              >
+                <div className="flex items-start gap-2 min-w-0">
+                  <AlertTriangle className="w-4 h-4 text-[#b80035] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-[#0b1c30] truncate leading-tight">
+                      {c1 ? `#${c1.no} ${c1.item}` : KOSONG}
+                    </p>
+                    <p className="text-[11px] text-[#5c5e64] leading-tight mt-0.5">
+                      {c1 ? sumberLaporan(c1.laporan, c1.halaman_cetak) : KOSONG}
+                    </p>
+                  </div>
+                </div>
+                <span className="bg-[#ffdad6] text-[#b80035] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
+                  Warning
+                </span>
+              </div>
+
+              {/* Action 2 */}
+              <Link
+                href={c2 ? `/data-quality?cek=${c2.no}` : "/data-quality"}
+                className="p-2 rounded-[8px] hover:bg-[#f8f9ff] transition-colors flex items-center justify-between gap-2"
+              >
+                <div className="flex items-start gap-2 min-w-0">
+                  <Target className="w-4 h-4 text-[#40000c] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-[#0b1c30] truncate leading-tight">
+                      {c2 ? `#${c2.no} ${c2.item}` : KOSONG}
+                    </p>
+                    <p className="text-[11px] text-[#5c5e64] leading-tight mt-0.5">
+                      {c2 ? sumberLaporan(c2.laporan, c2.halaman_cetak) : KOSONG}
+                    </p>
+                  </div>
+                </div>
+                <span className="bg-[#ffdad6] text-[#b80035] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
+                  Warning
+                </span>
+              </Link>
+
+              {/* Action 3 */}
+              <Link
+                href={c3 ? `/data-quality?cek=${c3.no}` : "/data-quality"}
+                className="p-2 rounded-[8px] hover:bg-[#f8f9ff] transition-colors flex items-center justify-between gap-2"
+              >
+                <div className="flex items-start gap-2 min-w-0">
+                  <FlaskConical className="w-4 h-4 text-[#44474d] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-[#0b1c30] truncate leading-tight">
+                      {c3 ? `#${c3.no} ${c3.item}` : KOSONG}
+                    </p>
+                    <p className="text-[11px] text-[#5c5e64] leading-tight mt-0.5">
+                      {c3 ? sumberLaporan(c3.laporan, c3.halaman_cetak) : KOSONG}
+                    </p>
+                  </div>
+                </div>
+                <span className="bg-[#ffdad6] text-[#b80035] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
+                  Warning
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-[11px]">
+            <span className="text-[#5c5e64]">{r ? `${r.ditandai.length} dari ${r.tercakup} pemeriksaan ditandai` : KOSONG}</span>
+            <Link href="/data-quality" title="Spesifikasi" aria-disabled="true" onClick={tahanTautan} className="text-[#b80035] font-semibold hover:underline">
+              Spesifikasi →
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Per-scope table (panduan 3.2) */}
-      <div className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-4">
-        <div>
-          <h3 className="text-[14px] font-bold text-[#0b1c30]">Emisi per scope ({SATUAN})</h3>
-          <p className="text-[12px] text-[#5c5e64]">Sumber: {SUMBER_DASHBOARD}</p>
+      {/* 5. Section - Recent Activity */}
+      <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_1px_1px_rgba(0,0,0,0.05)] space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#0b1c30]" />
+            <h2 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+              Aktivitas terbaru
+            </h2>
+            <span className="bg-[#e5eeff] text-[#5c5e64] text-[11px] font-semibold px-2 py-0.5 rounded-[4px] tracking-[0.22px]">
+              Spesifikasi
+            </span>
+          </div>
+
+          <Link
+            href="/governance"
+            title="Spesifikasi"
+            className="flex items-center gap-1 text-[13px] font-semibold text-[#b80035] hover:underline"
+          >
+            <span>Governance & Jejak Perubahan</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-        <div className="overflow-x-auto rounded-lg border border-[#e5eeff]">
-          <table className="w-full text-left border-collapse text-[13px]">
-            <thead>
-              <tr className="bg-[#eff4ff] text-[#5c5e64] text-[11px] uppercase tracking-wider font-semibold">
-                <th className="px-4 py-3">Scope</th>
-                {TAHUN.map((t) => (
-                  <th key={t} className={`px-4 py-3 text-right ${t === tahun ? "text-[#0b1c30]" : ""}`}>
-                    FY {t}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f1f5f9]">
-              {(
-                [
-                  ["Scope 1", "scope1"],
-                  ["Scope 2", "scope2"],
-                  ["Scope 1+2", "scope1_2"],
-                ] as const
-              ).map(([label, k]) => (
-                <tr key={k} className={`hover:bg-[#f8f9ff] ${k === "scope1_2" ? "font-semibold" : ""}`}>
-                  <td className="px-4 py-3 text-[#0b1c30]">{label}</td>
-                  {TAHUN.map((t) => (
-                    <td key={t} className={`px-4 py-3 text-right ${t === tahun ? "bg-[#f8f9ff] font-semibold" : ""}`}>
-                      {fmtAngka(nilaiTahun(t)?.[k])}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* 3 Activity Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Activity 1 */}
+          <div className="bg-[#eff4ff]/50 rounded-[8px] p-3.5 border border-[#dce9ff]/60 shadow-[0px_2px_4px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#ffdada] text-[#40000c] flex items-center justify-center font-bold text-[11px] shrink-0">
+                —
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0b1c30] truncate">
+                    —
+                  </span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[13px] font-medium text-[#0b1c30] mt-1 leading-tight">
+                  Spesifikasi
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-1 leading-tight">
+                  —
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-[#dce9ff]/50 flex items-center justify-between text-[11px]">
+              <span className="text-[#5c5e64]/70">—</span>
+              <Link href="/reconciliation" title="Spesifikasi" aria-disabled="true" onClick={tahanTautan} className="text-[#b80035] font-semibold hover:underline flex items-center gap-1">
+                —
+              </Link>
+            </div>
+          </div>
+
+          {/* Activity 2 */}
+          <div className="bg-[#eff4ff]/50 rounded-[8px] p-3.5 border border-[#dce9ff]/60 shadow-[0px_2px_4px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#d3e4fe] text-[#0b1c30] flex items-center justify-center font-bold text-[11px] shrink-0">
+                —
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0b1c30] truncate">
+                    —
+                  </span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[13px] font-medium text-[#0b1c30] mt-1 leading-tight">
+                  —
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-1 leading-tight">
+                  —
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-[#dce9ff]/50 flex items-center justify-between text-[11px]">
+              <span className="text-[#5c5e64]/70">—</span>
+              <Link href="/governance" title="Spesifikasi" aria-disabled="true" onClick={tahanTautan} className="text-[#b80035] font-semibold hover:underline flex items-center gap-1">
+                —
+              </Link>
+            </div>
+          </div>
+
+          {/* Activity 3 */}
+          <div className="bg-[#eff4ff]/50 rounded-[8px] p-3.5 border border-[#dce9ff]/60 shadow-[0px_2px_4px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#89f5e7] text-[#00201d] flex items-center justify-center font-bold text-[11px] shrink-0">
+                —
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#0b1c30] truncate">
+                    —
+                  </span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[13px] font-medium text-[#0b1c30] mt-1 leading-tight">
+                  —
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-1 leading-tight">
+                  —
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-[#dce9ff]/50 flex items-center justify-between text-[11px]">
+              <span className="text-[#5c5e64]/70">—</span>
+              <Link href="/decision-lab" title="Spesifikasi" aria-disabled="true" onClick={tahanTautan} className="text-[#b80035] font-semibold hover:underline flex items-center gap-1">
+                —
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

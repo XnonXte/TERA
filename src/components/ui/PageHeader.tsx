@@ -3,7 +3,7 @@ import React from "react";
 interface PageHeaderProps {
   badge?: string;
   title: string;
-  description?: string;
+  description: string;
   actions?: React.ReactNode;
 }
 
@@ -24,11 +24,9 @@ export default function PageHeader({
         <h1 className="text-[26px] font-bold text-[#0b1c30] tracking-tight">
           {title}
         </h1>
-        {description && (
-          <p className="text-[14px] text-[#5c5e64] mt-1 max-w-3xl leading-relaxed">
-            {description}
-          </p>
-        )}
+        <p className="text-[14px] text-[#5c5e64] mt-1 max-w-3xl leading-relaxed">
+          {description}
+        </p>
       </div>
       {actions && (
         <div className="flex items-center gap-3 shrink-0">{actions}</div>

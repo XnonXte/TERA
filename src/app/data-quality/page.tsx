@@ -1,55 +1,47 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
   RotateCw,
-  AlertTriangle,
+  Download,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
-  ShieldCheck,
-  ListChecks,
-  ArrowUpDown,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  FileCheck,
+  Building,
 } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
-import KpiCard from "@/components/ui/KpiCard";
-import StatusBadge from "@/components/ui/StatusBadge";
-import { useTeraStore } from "@/stores/useTeraStore";
-import { SEED, Cek, sumberLaporan, namaLaporan } from "@/lib/seed";
+import { useSeedStore } from "@/stores/useSeedStore";
+import { SEED, namaLaporan, sumberLaporan } from "@/lib/seed";
 import { HasilCek } from "@/lib/rules";
-import { INFO_ATURAN, TEKS_HASIL, labelHasil, satuanCek, LabelHasil } from "@/lib/dq";
+import { INFO_ATURAN, labelHasil, satuanCek } from "@/lib/dq";
 import { fmtAngka, fmtTetap, fmtBertanda, KOSONG } from "@/lib/format";
-
-type KolomUrut = "no" | "item" | "sumber" | "tertulis" | "hitung" | "selisih" | "toleransi" | "aturan" | "hasil";
-
-// Hasil aplikasi memakai StatusBadge asli: Warning (ditandai), Valid (tidak ditandai), abu (di luar cakupan).
-const STATUS_BADGE: Record<LabelHasil, string> = {
-  ditandai: "warning",
-  tidak: "valid",
-  luar: "luar",
-  belum: "belum",
-};
-
-const daftarNo = (xs: number[]) => (xs.length ? xs.map((n) => `#${n}`).join(", ") : KOSONG);
 
 function DataQualityContent() {
   const params = useSearchParams();
-  const { hasilAturan, jalankanAturanDQ, bukaCek } = useTeraStore();
+  const { hasilAturan, jalankanAturanDQ, bukaCek } = useSeedStore();
   const cek = SEED.cek_32;
 
-  const [fAturan, setFAturan] = useState("semua");
-  const [fHasil, setFHasil] = useState("semua");
-  const [fLaporan, setFLaporan] = useState("semua");
-  const [cari, setCari] = useState("");
-  const [urut, setUrut] = useState<{ kolom: KolomUrut; naik: boolean }>({ kolom: "no", naik: true });
+  // Filter (bentuk asli dipertahankan; isinya dari seed)
+  const [activeFilterScope, setFilterScope] = useState("All"); // aturan
+  const [activeFilterStatus, setFilterStatus] = useState("All"); // hasil
+  const [selectedFacility, setSelectedFacility] = useState("All"); // laporan
+  const [activeFilterIssueType, setFilterIssueType] = useState("All"); // kelompok
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
-  // Aturan dijalankan sekali saat halaman pertama dibuka (di browser).
+  // Aturan α/β dijalankan sekali di browser bila belum ada hasil.
   useEffect(() => {
     if (!hasilAturan) jalankanAturanDQ();
   }, [hasilAturan, jalankanAturanDQ]);
 
-  // Tautan langsung: /data-quality?cek=19 membuka detail; ?q=... dari pencarian header mengisi kolom cari.
+  // Tautan langsung: ?cek=19 membuka detail; ?q=... dari pencarian header.
   const paramCek = params.get("cek");
   const paramQ = params.get("q");
   useEffect(() => {
@@ -57,311 +49,443 @@ function DataQualityContent() {
     if (no && cek.some((c) => c.no === no)) bukaCek(no);
   }, [paramCek, cek, bukaCek]);
   useEffect(() => {
-    if (paramQ !== null) setCari(paramQ);
+    if (paramQ !== null) {
+      setSearch(paramQ);
+      setCurrentPage(1);
+    }
   }, [paramQ]);
 
   const hasilByNo = useMemo(() => {
     const m = new Map<number, HasilCek>();
-    hasilAturan?.hasil.forEach((h) => m.set(h.no, h));
+    hasilAturan?.hasil.forEach((x) => m.set(x.no, x));
     return m;
   }, [hasilAturan]);
-
-  const laporanList = useMemo(() => Array.from(new Set(cek.map((c) => c.laporan))).sort(), [cek]);
   const r = hasilAturan?.ringkasan;
+  const laporanList = useMemo(() => Array.from(new Set(cek.map((c) => c.laporan))).sort(), [cek]);
+  const kelompokList = useMemo(() => Array.from(new Set(cek.map((c) => c.kelompok))).sort(), [cek]);
 
-  const baris = useMemo(() => {
-    const q = cari.trim().toLowerCase();
-    const xs = cek.filter((c) => {
-      const h = hasilByNo.get(c.no);
-      if (fAturan !== "semua" && c.aturan_prototipe !== fAturan) return false;
-      if (fHasil !== "semua" && labelHasil(c, h) !== fHasil) return false;
-      if (fLaporan !== "semua" && c.laporan !== fLaporan) return false;
-      if (q && !`#${c.no} ${c.item} ${namaLaporan(c.laporan)} hlm ${c.halaman_cetak}`.toLowerCase().includes(q)) return false;
+  // Kartu ringkasan (dihitung aplikasi)
+  const totalCount = cek.length;
+  const healthRate = r ? String(r.tidakDitandai) : KOSONG;
+  const criticalCount = r ? r.ditandai.length : KOSONG;
+  const warningCount = r ? r.diLuarCakupan.length : KOSONG;
+  const daftarNo = (xs: number[]) => xs.map((n) => `#${n}`).join(", ");
+
+  // Baris tabel: pemeriksaan dari seed dipetakan ke field tampilan.
+  const records = useMemo(
+    () =>
+      cek.map((c) => {
+        const h = hasilByNo.get(c.no);
+        const u = satuanCek(c);
+        const jenis = labelHasil(c, h);
+        return {
+          no: c.no,
+          id: `#${c.no}`,
+          sourceRef: c.item,
+          metric: sumberLaporan(c.laporan, c.halaman_cetak),
+          scope: namaLaporan(c.laporan),
+          period: `hlm ${c.halaman_cetak}`,
+          value: c.nilai_tertulis as number | null,
+          unit: h?.hitung != null ? `hitung ulang ${fmtTetap(h.hitung)} ${u.nilai}`.trim() : u.nilai || KOSONG,
+          jenis,
+          laporan: c.laporan,
+          kelompok: c.kelompok,
+          aturan: c.aturan_prototipe,
+          issueTitle:
+            c.aturan_prototipe === "di_luar_cakupan"
+              ? "Di luar cakupan"
+              : `${INFO_ATURAN[c.aturan_prototipe].simbol} ${INFO_ATURAN[c.aturan_prototipe].ruleId}`,
+          ruleId: h?.selisih != null ? `selisih ${fmtBertanda(h.selisih)} ${u.selisih}` : "",
+        };
+      }),
+    [cek, hasilByNo]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return records.filter((x) => {
+      if (activeFilterScope !== "All" && x.aturan !== activeFilterScope) return false;
+      if (activeFilterStatus !== "All" && x.jenis !== activeFilterStatus) return false;
+      if (selectedFacility !== "All" && x.laporan !== selectedFacility) return false;
+      if (activeFilterIssueType !== "All" && x.kelompok !== activeFilterIssueType) return false;
+      if (q && !`${x.id} ${x.sourceRef} ${x.metric}`.toLowerCase().includes(q)) return false;
       return true;
     });
-    const nilai = (c: Cek): number | string => {
-      const h = hasilByNo.get(c.no);
-      switch (urut.kolom) {
-        case "no": return c.no;
-        case "item": return c.item;
-        case "sumber": return `${c.laporan}-${String(c.halaman_cetak).padStart(4, "0")}`;
-        case "tertulis": return c.nilai_tertulis;
-        case "hitung": return h?.hitung ?? -Infinity;
-        case "selisih": return h?.selisih ?? -Infinity;
-        case "toleransi": return c.toleransi_d6;
-        case "aturan": return c.aturan_prototipe;
-        case "hasil": return labelHasil(c, h);
-      }
-    };
-    return [...xs].sort((a, b) => {
-      const va = nilai(a);
-      const vb = nilai(b);
-      const d = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb));
-      return urut.naik ? d : -d;
-    });
-  }, [cek, hasilByNo, fAturan, fHasil, fLaporan, cari, urut]);
+  }, [records, activeFilterScope, activeFilterStatus, selectedFacility, activeFilterIssueType, search]);
 
-  const adaFilter = fAturan !== "semua" || fHasil !== "semua" || fLaporan !== "semua" || cari !== "";
+  const openDrawer = (record: { no: number }) => bukaCek(record.no);
+  const runValidation = () => jalankanAturanDQ("Diklik pengguna");
 
-  const th = (k: KolomUrut, label: string, kanan = false) => (
-    <th className={`py-3 px-3 ${kanan ? "text-right" : ""}`}>
-      <button
-        type="button"
-        onClick={() => setUrut((u) => ({ kolom: k, naik: u.kolom === k ? !u.naik : true }))}
-        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[#0b1c30]"
-      >
-        {label}
-        <ArrowUpDown className={`w-3 h-3 ${urut.kolom === k ? "text-[#b80035]" : "opacity-40"}`} />
-      </button>
-    </th>
+  // Paginated records
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const paginated = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        badge="DATA QUALITY CENTER"
-        title="Pemeriksaan konsistensi angka laporan"
-        description="32 pemeriksaan dari berkas D6 pada laporan keberlanjutan Telkomsel 2023-2025. Aplikasi menjalankan aturan α (DQ-08) dan β (DQ-09) di browser."
-        actions={
+    <div className="space-y-6 pb-8">
+      {/* 1. Breadcrumb */}
+      <nav className="flex items-center gap-2 text-[12px] text-[#5c5e64]">
+        <Link href="/overview" className="hover:text-[#0b1c30] transition-colors">
+          Beranda
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-[#5c5e64]/60" />
+        <span className="font-semibold text-[#0b1c30]">Data Quality Center</span>
+      </nav>
+
+      {/* 2. Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] font-bold text-[#0b1c30] tracking-[-0.8px] leading-[40px]">
+            Data Quality Center
+          </h1>
+          <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
+            32 pemeriksaan dari berkas D6 pada laporan keberlanjutan Telkomsel 2023–2025.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={jalankanAturanDQ}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-[#c4c6cd]/50 rounded-lg text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
+            disabled
+            title="Spesifikasi"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#c4c6cd]/50 rounded-[8px] text-[13px] font-semibold text-[#0b1c30] hover:bg-[#eff4ff] transition-colors shadow-sm"
           >
-            <RotateCw className="w-4 h-4 text-[#5c5e64]" />
+            <Download className="w-4 h-4 text-[#5c5e64]" />
+            <span>Ekspor laporan</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={runValidation}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#b80035] rounded-[8px] text-[13px] font-semibold text-white hover:bg-[#9f002d] transition-colors shadow-sm"
+          >
+            <RotateCw className="w-4 h-4" />
             <span>Jalankan aturan</span>
           </button>
-        }
-      />
-
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard
-          label="Total"
-          value={cek.length}
-          unit="pemeriksaan"
-          badge={{ text: r ? `${r.tercakup} dalam cakupan` : KOSONG, variant: "blue" }}
-          icon={<ListChecks className="w-4 h-4 text-[#0b1c30]" />}
-        />
-        <KpiCard
-          label="Ditandai"
-          value={r ? r.ditandai.length : KOSONG}
-          unit="pemeriksaan"
-          badge={{ text: "Warning", variant: "amber" }}
-          subtitle={r ? daftarNo(r.ditandai) : undefined}
-          icon={<AlertTriangle className="w-4 h-4 text-[#d97706]" />}
-        />
-        <KpiCard
-          label="Tidak ditandai"
-          value={r ? r.tidakDitandai : KOSONG}
-          unit="pemeriksaan"
-          subtitle="Dalam cakupan aturan"
-          icon={<CheckCircle2 className="w-4 h-4 text-[#00675e]" />}
-        />
-        <KpiCard
-          label="False positive"
-          value={r ? r.falsePositive : KOSONG}
-          unit="pemeriksaan"
-          icon={<ShieldCheck className="w-4 h-4 text-[#00675e]" />}
-        />
-        <KpiCard
-          label="Luar cakupan"
-          value={r ? r.diLuarCakupan.length : KOSONG}
-          unit="pemeriksaan"
-          subtitle={r ? daftarNo(r.diLuarCakupan) : undefined}
-          icon={<AlertCircle className="w-4 h-4 text-[#5c5e64]" />}
-        />
-      </div>
-
-      {/* Rule panel */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {(["alpha", "beta"] as const).map((a) => {
-          const p = r?.perAturan[a];
-          return (
-            <div key={a} className="bg-white rounded-xl border border-[#e5eeff] p-5 shadow-sm space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[14px] font-bold text-[#0b1c30]">
-                  Aturan {INFO_ATURAN[a].simbol} ({INFO_ATURAN[a].ruleId})
-                </h3>
-                {p && <StatusBadge status={p.ditandai > 0 ? "warning" : "valid"} size="sm" label={`${p.ditandai} ditandai`} />}
-              </div>
-              <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN[a].nama}</p>
-              <p className="text-[13px] text-[#0b1c30]">{p ? `#${p.dari}-#${p.sampai} · ${p.jumlah} pemeriksaan` : KOSONG}</p>
-            </div>
-          );
-        })}
-        <div className="bg-white rounded-xl border border-dashed border-[#c4c6cd] p-5 space-y-1.5">
-          <h3 className="text-[14px] font-bold text-[#0b1c30]">Aturan {INFO_ATURAN.di_luar_cakupan.simbol}</h3>
-          <p className="text-[12px] text-[#5c5e64]">{INFO_ATURAN.di_luar_cakupan.nama}</p>
-          <p className="text-[13px] text-[#0b1c30]">{r ? daftarNo(r.diLuarCakupan) : KOSONG}</p>
         </div>
       </div>
 
-      {/* Filter and Control Bar */}
-      <div className="bg-white p-4 rounded-xl border border-[#e5eeff] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Search Input */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-[#5c5e64] absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* 3. 4 Metric Cards with Bottom Accent Lines */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Total Records */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Total pemeriksaan
+            </div>
+            <div className="text-[32px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
+              {totalCount}
+            </div>
+          </div>
+          <div className="text-[12px] text-[#5c5e64]">
+            {r ? `${r.tercakup} dalam cakupan aturan α/β` : KOSONG}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#0b1c30]" />
+        </div>
+
+        {/* Card 2: Quality Health Rate */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Tidak ditandai
+            </div>
+            <div className="text-[32px] font-bold text-[#00675e] tracking-[-0.9px] leading-tight mt-1">
+              {healthRate}
+            </div>
+          </div>
+          <div className="text-[12px] text-[#00675e] font-semibold flex items-center gap-1">
+            <span>Dalam cakupan aturan α/β</span>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#00675e]" />
+        </div>
+
+        {/* Card 3: Critical Violations */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Ditandai
+            </div>
+            <div className="text-[32px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight mt-1">
+              {criticalCount}
+            </div>
+          </div>
+          <div className="text-[12px] text-[#b80035] font-medium">
+            {r ? `${daftarNo(r.ditandai)} · Warning` : KOSONG}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#b80035]" />
+        </div>
+
+        {/* Card 4: Warning Anomalies */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px] relative overflow-hidden">
+          <div>
+            <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
+              Di luar cakupan
+            </div>
+            <div className="text-[32px] font-bold text-[#d97706] tracking-[-0.9px] leading-tight mt-1">
+              {warningCount}
+            </div>
+          </div>
+          <div className="text-[12px] text-[#5c5e64]">
+            {r ? daftarNo(r.diLuarCakupan) : KOSONG}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#d97706]" />
+        </div>
+      </div>
+
+      {/* 4. Filter & Search Controls */}
+      <div className="bg-white p-4 rounded-[12px] border border-[#e5eeff] shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
+        {/* Search */}
+        <div className="relative w-full lg:w-96">
+          <Search className="w-4 h-4 text-[#5c5e64] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             aria-label="Cari pemeriksaan"
-            placeholder="Cari…"
-            className="w-full h-9 pl-9 pr-3 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-lg text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035]"
+            placeholder="Cari pemeriksaan…"
+            className="w-full h-10 pl-9 pr-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all"
           />
         </div>
 
         {/* Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Aturan:</span>
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Scope Dropdown */}
+          <div className="relative">
             <select
-              aria-label="Filter aturan"
-              value={fAturan}
-              onChange={(e) => setFAturan(e.target.value)}
-              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+              value={activeFilterScope}
+              onChange={(e) => {
+                setFilterScope(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="semua">Semua aturan</option>
+              <option value="All">Semua aturan</option>
               <option value="alpha">α (DQ-08)</option>
               <option value="beta">β (DQ-09)</option>
               <option value="di_luar_cakupan">Di luar cakupan</option>
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Hasil:</span>
+          {/* Severity Dropdown */}
+          <div className="relative">
             <select
-              aria-label="Filter hasil"
-              value={fHasil}
-              onChange={(e) => setFHasil(e.target.value)}
-              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+              value={activeFilterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="semua">Semua hasil</option>
-              <option value="ditandai">Ditandai</option>
+              <option value="All">Semua hasil</option>
+              <option value="ditandai">Ditandai · Warning</option>
               <option value="tidak">Tidak ditandai</option>
               <option value="luar">Di luar cakupan</option>
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#eff4ff] px-3 py-1.5 rounded-lg border border-[#dce9ff] text-[12px]">
-            <span className="font-semibold text-[#5c5e64]">Laporan:</span>
+          {/* Facility Dropdown */}
+          <div className="relative">
             <select
-              aria-label="Filter laporan"
-              value={fLaporan}
-              onChange={(e) => setFLaporan(e.target.value)}
-              className="bg-transparent font-bold text-[#0b1c30] focus:outline-none cursor-pointer"
+              value={selectedFacility}
+              onChange={(e) => {
+                setSelectedFacility(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
             >
-              <option value="semua">Semua laporan</option>
+              <option value="All">Laporan: semua</option>
               {laporanList.map((l) => (
                 <option key={l} value={l}>
                   {namaLaporan(l)}
                 </option>
               ))}
             </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {adaFilter && (
+          {/* Rule Filter */}
+          <div className="relative">
+            <select
+              value={activeFilterIssueType}
+              onChange={(e) => {
+                setFilterIssueType(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none bg-[#eff4ff] border border-[#dce9ff] text-[#0b1c30] text-[12px] font-semibold pl-3 pr-8 py-2 rounded-[8px] focus:outline-none cursor-pointer"
+            >
+              <option value="All">Semua kelompok</option>
+              {kelompokList.map((k) => (
+                <option key={k} value={k}>
+                  Kelompok {k}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5c5e64] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Reset button */}
+          {(activeFilterScope !== "All" ||
+            activeFilterStatus !== "All" ||
+            activeFilterIssueType !== "All" ||
+            selectedFacility !== "All" ||
+            search !== "") && (
             <button
               type="button"
               onClick={() => {
-                setFAturan("semua");
-                setFHasil("semua");
-                setFLaporan("semua");
-                setCari("");
+                setFilterScope("All");
+                setFilterStatus("All");
+                setFilterIssueType("All");
+                setSelectedFacility("All");
+                setSearch("");
+                setCurrentPage(1);
               }}
-              className="text-[12px] font-semibold text-[#b80035] hover:underline"
+              className="text-[12px] font-semibold text-[#b80035] hover:underline px-2 py-1"
             >
-              Reset
+              Hapus filter
             </button>
           )}
         </div>
       </div>
 
-      {/* Checks Table */}
-      <div className="bg-white rounded-xl border border-[#e5eeff] shadow-sm overflow-hidden">
+      {/* 5. Main Records Table */}
+      <div className="bg-white rounded-[12px] border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                {th("no", "#")}
-                {th("item", "Pemeriksaan")}
-                {th("sumber", "Sumber")}
-                {th("tertulis", "Tertulis", true)}
-                {th("hitung", "Hitung ulang", true)}
-                {th("selisih", "Selisih", true)}
-                {th("toleransi", "Toleransi", true)}
-                {th("aturan", "Aturan")}
-                {th("hasil", "Hasil aplikasi")}
-                <th className="py-3 px-3 text-right">Aksi</th>
+                <th className="py-3 px-4">#</th>
+                <th className="py-3 px-4">PEMERIKSAAN</th>
+                <th className="py-3 px-4">LAPORAN</th>
+                <th className="py-3 px-4">HALAMAN</th>
+                <th className="py-3 px-4">TERTULIS</th>
+                <th className="py-3 px-4">HASIL</th>
+                <th className="py-3 px-4">ATURAN</th>
+                <th className="py-3 px-4">STATUS</th>
+                <th className="py-3 px-4 text-right">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
-              {baris.length === 0 ? (
+              {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-[#5c5e64]">
+                  <td colSpan={9} className="py-12 text-center text-[#5c5e64]">
                     Tidak ada pemeriksaan yang cocok dengan filter.
                   </td>
                 </tr>
               ) : (
-                baris.map((c) => {
-                  const h = hasilByNo.get(c.no);
-                  const u = satuanCek(c);
-                  const jenis = labelHasil(c, h);
-                  const luar = c.aturan_prototipe === "di_luar_cakupan";
+                paginated.map((record) => {
+                  const isError = false;
+                  const isWarn = record.jenis === "ditandai";
+                  const isResolved = record.jenis === "luar";
+
                   return (
                     <tr
-                      key={c.no}
+                      key={record.id}
                       className="hover:bg-[#f8f9ff] transition-colors cursor-pointer group"
-                      onClick={() => bukaCek(c.no)}
+                      onClick={() => openDrawer(record)}
                     >
-                      <td className="py-3 px-3 font-bold text-[#0b1c30]">{c.no}</td>
-                      <td className="py-3 px-3 min-w-[170px]">
-                        <div className="font-semibold text-[#0b1c30]">{c.item}</div>
+                      {/* Record ID */}
+                      <td className="py-3.5 px-4 font-mono font-bold text-[#0b1c30]">
+                        {record.id}
                       </td>
-                      <td className="py-3 px-3 text-[#5c5e64] min-w-[110px]">
-                        {sumberLaporan(c.laporan, c.halaman_cetak)}
-                      </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <div className="font-bold text-[#0b1c30]">{fmtAngka(c.nilai_tertulis)}</div>
-                        <div className="text-[11px] text-[#5c5e64]">{u.nilai}</div>
-                      </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#0b1c30]">
-                        {h?.hitung != null ? fmtTetap(h.hitung) : KOSONG}
-                      </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <div className={`font-bold ${jenis === "ditandai" ? "text-[#b80035]" : "text-[#0b1c30]"}`}>
-                          {h?.selisih != null ? fmtBertanda(h.selisih) : KOSONG}
+
+                      {/* Facility */}
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[#0b1c30]">
+                          {record.sourceRef || record.metric}
                         </div>
-                        {h?.selisih != null && <div className="text-[11px] text-[#5c5e64]">{u.selisih}</div>}
+                        <div className="text-[11px] text-[#5c5e64]">
+                          {record.metric}
+                        </div>
                       </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap text-[#5c5e64]">
-                        {luar ? KOSONG : fmtAngka(c.toleransi_d6)}
+
+                      {/* Scope */}
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
+                          {record.scope}
+                        </span>
                       </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        {luar ? (
-                          KOSONG
-                        ) : (
-                          <span className="font-semibold text-[#0b1c30] bg-[#e5eeff] px-2 py-0.5 rounded text-[11px]">
-                            {INFO_ATURAN[c.aturan_prototipe].simbol} {INFO_ATURAN[c.aturan_prototipe].ruleId}
-                          </span>
+
+                      {/* Period */}
+                      <td className="py-3.5 px-4 text-[#5c5e64]">
+                        {record.period}
+                      </td>
+
+                      {/* Reading Value */}
+                      <td className="py-3.5 px-4">
+                        <div
+                          className={`font-bold ${
+                            record.value === null
+                              ? "text-[#b80035]"
+                              : "text-[#0b1c30]"
+                          }`}
+                        >
+                          {record.value === null
+                            ? KOSONG
+                            : fmtAngka(record.value)}
+                        </div>
+                        <div className="text-[11px] text-[#5c5e64]">
+                          {record.unit}
+                        </div>
+                      </td>
+
+                      {/* Severity */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            isResolved
+                              ? "bg-[#eff4ff] text-[#00675e] border border-[#dce9ff]"
+                              : isError
+                              ? "bg-[#ffdad6] text-[#b80035] border border-[#ffb4ab]"
+                              : isWarn
+                              ? "bg-[#fef3c7] text-[#d97706] border border-[#fde68a]"
+                              : "bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]"
+                          }`}
+                        >
+                          {isResolved
+                            ? "Di luar cakupan"
+                            : isError
+                            ? KOSONG
+                            : isWarn
+                            ? "Ditandai · Warning"
+                            : "Tidak ditandai"}
+                        </span>
+                      </td>
+
+                      {/* Violation Type */}
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="text-[12px] text-[#0b1c30] truncate font-medium">
+                          {record.issueTitle || KOSONG}
+                        </div>
+                        {record.ruleId && (
+                          <div className="text-[11px] text-[#5c5e64] font-mono">
+                            {record.ruleId}
+                          </div>
                         )}
                       </td>
-                      <td className="py-3 px-3 min-w-[150px]">
-                        <div className="max-w-[160px]">
-                          <StatusBadge status={STATUS_BADGE[jenis]} label={TEKS_HASIL[jenis]} size="sm" showIcon={jenis !== "luar"} />
-                        </div>
-                        {luar && <div className="text-[11px] text-[#5c5e64] mt-1">Keterangan D6: {c.hasil_d6}</div>}
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4">
+                        <span className="text-[12px] font-semibold text-[#0b1c30]">
+                          {isResolved ? KOSONG : isWarn ? "Perlu review" : "Lolos"}
+                        </span>
                       </td>
-                      <td className="py-3 px-3 text-right">
+
+                      {/* Action */}
+                      <td className="py-3.5 px-4 text-right">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            bukaCek(c.no);
+                            openDrawer(record);
                           }}
-                          className="px-3 py-1 rounded text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors whitespace-nowrap"
+                          className="px-3 py-1 rounded-[6px] text-[12px] font-semibold text-[#b80035] bg-[#fff1f2] border border-[#ffdad6] hover:bg-[#ffe4e6] transition-colors"
                         >
                           Lihat detail
                         </button>
@@ -374,11 +498,220 @@ function DataQualityContent() {
           </table>
         </div>
 
-        {/* Table footer count */}
-        <div className="p-4 bg-[#f8f9ff] border-t border-[#e5eeff] flex items-center justify-between text-[12px] text-[#5c5e64]">
+        {/* Table Pagination Footer */}
+        <div className="p-4 bg-[#f8f9ff] border-t border-[#e5eeff] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#5c5e64]">
           <div>
-            Menampilkan <span className="font-bold text-[#0b1c30]">{baris.length}</span> dari{" "}
-            <span className="font-bold text-[#0b1c30]">{cek.length}</span> pemeriksaan
+            Menampilkan <strong className="text-[#0b1c30]">{filtered.length ? (currentPage - 1) * pageSize + 1 : 0}</strong>–
+            <strong className="text-[#0b1c30]">
+              {Math.min(currentPage * pageSize, filtered.length)}
+            </strong>{" "}
+            dari <strong className="text-[#0b1c30]">{filtered.length}</strong> pemeriksaan
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="p-1.5 rounded-[6px] border border-[#dce9ff] text-[#5c5e64] hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 rounded-[6px] text-[12px] font-semibold transition-colors ${
+                  currentPage === page
+                    ? "bg-[#b80035] text-white"
+                    : "text-[#5c5e64] hover:bg-white border border-transparent hover:border-[#dce9ff]"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="p-1.5 rounded-[6px] border border-[#dce9ff] text-[#5c5e64] hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. 3 Bottom Analytics Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Card 1: Findings by Issue Type */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] space-y-3.5">
+          <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+            Temuan per jenis masalah
+          </h3>
+
+          <div className="space-y-3 pt-1 text-[12px]">
+            <div>
+              <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
+                <span>Spesifikasi</span>
+                <span className="font-bold">—</span>
+              </div>
+              <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#b80035] h-full" style={{ width: "0%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
+                <span>—</span>
+                <span className="font-bold">—</span>
+              </div>
+              <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#d97706] h-full" style={{ width: "0%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
+                <span>—</span>
+                <span className="font-bold">—</span>
+              </div>
+              <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#f59e0b] h-full" style={{ width: "0%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
+                <span>—</span>
+                <span className="font-bold">—</span>
+              </div>
+              <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#facc15] h-full" style={{ width: "0%" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[#0b1c30] font-medium mb-1">
+                <span>—</span>
+                <span className="font-bold">—</span>
+              </div>
+              <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#94a3b8] h-full" style={{ width: "0%" }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Findings by Scope */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <div>
+            <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+              Temuan per scope
+            </h3>
+
+            {/* Scope Visual Breakdown */}
+            <div className="my-5 flex items-center justify-center">
+              <div className="relative w-36 h-36 rounded-full border-8 border-[#eff4ff] flex flex-col items-center justify-center shadow-inner">
+                <div
+                  className="absolute inset-0 rounded-full border-8 border-transparent border-t-[#b80035] border-r-[#b80035] border-b-[#b80035]"
+                  style={{ transform: "rotate(45deg)" }}
+                />
+                <span className="text-[10px] font-bold text-[#5c5e64] uppercase tracking-wider">
+                  —
+                </span>
+                <span className="text-[22px] font-bold text-[#0b1c30]">—</span>
+                <span className="text-[10px] text-[#5c5e64]">Spesifikasi</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-[12px]">
+              <div className="flex items-center justify-between p-2 rounded-[8px] bg-[#eff4ff]">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-[3px] bg-[#b80035]" />
+                  <span className="font-medium text-[#0b1c30]">—</span>
+                </div>
+                <span className="font-bold text-[#0b1c30]">—</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2 rounded-[8px] bg-[#eff4ff]">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-[3px] bg-[#ffb3b6]" />
+                  <span className="font-medium text-[#0b1c30]">—</span>
+                </div>
+                <span className="font-bold text-[#0b1c30]">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-[#5c5e64] pt-3 border-t border-[#f1f5f9]">
+            —
+          </div>
+        </div>
+
+        {/* Card 3: Recent Resolved Findings */}
+        <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
+                Temuan terselesaikan
+              </h3>
+              <FileCheck className="w-4 h-4 text-[#00675e]" />
+            </div>
+
+            <div className="space-y-3">
+              {/* Item 1 */}
+              <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[#0b1c30] font-medium mt-1">
+                  Spesifikasi
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-0.5">
+                  —
+                </p>
+              </div>
+
+              {/* Item 2 */}
+              <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[#0b1c30] font-medium mt-1">
+                  —
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-0.5">
+                  —
+                </p>
+              </div>
+
+              {/* Item 3 */}
+              <div className="p-2.5 rounded-[8px] bg-[#eff4ff]/60 border border-[#dce9ff]/60 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-[#0b1c30]">—</span>
+                  <span className="text-[10px] text-[#5c5e64]">—</span>
+                </div>
+                <p className="text-[#0b1c30] font-medium mt-1">
+                  —
+                </p>
+                <p className="text-[11px] text-[#5c5e64] mt-0.5">
+                  —
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-[11px]">
+            <span className="text-[#5c5e64]">—</span>
+            <Link href="/governance" title="Spesifikasi" className="text-[#b80035] font-semibold hover:underline">
+              Governance & Jejak Perubahan →
+            </Link>
           </div>
         </div>
       </div>

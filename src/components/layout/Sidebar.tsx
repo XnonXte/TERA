@@ -10,25 +10,27 @@ import {
   ArrowLeftRight,
   CloudSun,
   FlaskConical,
-  ShieldCheck,
-  User,
+  FileCheck,
+  HelpCircle,
 } from "lucide-react";
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  spec?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: "Dashboard", href: "/overview", icon: LayoutGrid },
-  { name: "Data Quality Center", href: "/data-quality", icon: BadgeCheck },
-  { name: "Baseline Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
-  { name: "Carbon Driver Analysis", href: "/carbon-analysis", icon: CloudSun, spec: true },
-  { name: "Decision Lab", href: "/decision-lab", icon: FlaskConical, spec: true },
-  { name: "Governance & Jejak Perubahan", href: "/governance", icon: ShieldCheck, spec: true },
+  { name: "Overview", href: "/overview", icon: LayoutGrid },
+  { name: "Data Quality", href: "/data-quality", icon: BadgeCheck },
+  { name: "Reconciliation", href: "/reconciliation", icon: ArrowLeftRight },
+  { name: "Carbon Analysis", href: "/carbon-analysis", icon: CloudSun },
+  { name: "Decision Lab", href: "/decision-lab", icon: FlaskConical },
+  { name: "Governance & Jejak Perubahan", href: "/governance", icon: FileCheck },
 ];
+
+// Halaman yang masih spesifikasi (belum dibangun pada prototipe ini).
+const SPEK = ["/carbon-analysis", "/decision-lab", "/governance"];
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -50,7 +52,7 @@ export default function Sidebar() {
             <div className="relative w-[156px] h-[68px]">
               <Image
                 src="/tera-logo.png"
-                alt="TERA"
+                alt="TERA Logo"
                 fill
                 className="object-contain object-left"
                 priority
@@ -60,7 +62,7 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation Items */}
-        <nav className="space-y-1.5" aria-label="Navigasi utama">
+        <nav className="space-y-1.5" aria-label="Main Navigation">
           {NAV_ITEMS.map((item) => {
             const active = isItemActive(item.href);
             const Icon = item.icon;
@@ -69,6 +71,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                title={SPEK.includes(item.href) ? "Spesifikasi" : undefined}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                   active
                     ? "bg-[#b80035] text-[#ffffff] shadow-sm font-semibold"
@@ -80,24 +83,29 @@ export default function Sidebar() {
                     active ? "text-white" : "text-[#c4c6cd]"
                   }`}
                 />
-                <span className="flex-1 leading-tight">{item.name}</span>
-                {item.spec && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/20">
-                    Spek
-                  </span>
-                )}
+                <span>{item.name}</span>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* Bottom Section: User Profile */}
+      {/* Bottom Section: Help & User Profile */}
       <div className="p-4 border-t border-[#1f2937]/80 space-y-3">
+        <button
+          type="button"
+          disabled
+          title="Spesifikasi"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-[#c4c6cd] hover:text-white hover:bg-white/5 transition-colors"
+        >
+          <HelpCircle className="w-4 h-4 shrink-0 text-[#c4c6cd]" />
+          <span>Bantuan & Dokumentasi</span>
+        </button>
+
         {/* User Card */}
         <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.06] border border-white/5">
           <div className="w-8 h-8 rounded-full bg-[#b80035] text-[#fffaf9] flex items-center justify-center font-bold text-xs shrink-0 shadow">
-            <User className="w-4 h-4" />
+            —
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[13px] font-medium text-white truncate leading-tight">
