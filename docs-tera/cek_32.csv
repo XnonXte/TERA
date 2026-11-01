@@ -1,0 +1,33 @@
+﻿no,kelompok,laporan,halaman_cetak,item,nilai_tertulis,input_1..n (dipisah ;),rumus,nilai_hitung,selisih,toleransi,hasil_d6,aturan_prototipe,ditandai_prototipe_diharapkan,catatan_d6
+1,G1,SR25,147,Scope 1 2025: komponen vs total,14360.3,6391.6;4369.67;3596.1,SUM(G:O) komponen = total,14357.37,-2.92999999999847,0.15,GAGAL,alpha,ya,"Selisih -2.93 tCO2e. Total tertulis 14,360.3 pada tabel."
+2,G1,SR25,147,Scope 1 2024,19337.3,8179.14;4324.72;6833.44,SUM(G:O) komponen = total,19337.3,0.0,0.15,LOLOS,alpha,tidak,
+3,G1,SR25,147,Scope 1 2023,19866.45,8240.33;4324.72;7301.4,SUM(G:O) komponen = total,19866.45,0.0,0.15,LOLOS,alpha,tidak,
+4,G1,SR25,147,Scope 1+2 2025 (S1 + S2),1736327.9,14360.3;1721967.7,SUM(G:O) komponen = total,1736328.0,0.100000000093132,0.15,LOLOS,alpha,tidak,
+5,G1,SR25,147,Scope 1+2 2024,1561941.65,19337.3;1542604.35,SUM(G:O) komponen = total,1561941.65,0.0,0.15,LOLOS,alpha,tidak,
+6,G1,SR25,147,Scope 1+2 2023,1486664.59,19866.45;1466798.14,SUM(G:O) komponen = total,1486664.59,0.0,0.15,LOLOS,alpha,tidak,
+7,G1,SR24,113,Scope 1+2 2024,1530402.95,19337.3;1511065.65,SUM(G:O) komponen = total,1530402.95,0.0,0.15,LOLOS,alpha,tidak,
+8,G1,SR24,113,Scope 1+2 2023,1454708.89,19866.45;1434842.44,SUM(G:O) komponen = total,1454708.89,0.0,0.15,LOLOS,alpha,tidak,
+9,G1,SR24,113,Scope 1+2 2022,1407652.25,19314.35;1388337.9,SUM(G:O) komponen = total,1407652.25,0.0,0.15,LOLOS,alpha,tidak,
+10,G1,SR24,113,Scope 1 2024 (komponen),19337.3,8179.14;4324.72;6833.44,SUM(G:O) komponen = total,19337.3,0.0,0.15,LOLOS,alpha,tidak,
+11,G1,SR25,145,Energi total 2025 (GJ),6984695.3,183264.9;13926.0;6787504.4,SUM(G:O) komponen = total,6984695.3,0.0,1.0,LOLOS,alpha,tidak,Toleransi 1 GJ (pembulatan tabel energi).
+12,G1,SR25,145,Energi total 2024 (GJ),6510919.2,171783.3;9995.0;6329140.9,SUM(G:O) komponen = total,6510919.2,0.0,1.0,LOLOS,alpha,tidak,
+13,G1,SR25,145,Energi total 2023 (GJ),6202471.12,172613.3;7341.0;6022516.8,SUM(G:O) komponen = total,6202471.1,-0.0200000004842877,1.0,LOLOS,alpha,tidak,
+14,G1,SR24,116,Energi total 2024 (GJ),6374794.36,6203011.01;171783.35,SUM(G:O) komponen = total,6374794.36,0.0,1.0,LOLOS,alpha,tidak,
+15,G1,SR25,148,Scope 3 total 2025 (jumlah kategori),972421.0,30322.9;132506.2;164001.4;7.4;472.1;42.0;644986.2;56.8;26.0,SUM(G:O) komponen = total,972421.0,0.0,1.0,LOLOS,alpha,tidak,
+16,G1,SR25,148,Scope 3 total 2024,135006.1,4176.5;22366.2;0.5;8873.2;99559.4;30.3,SUM(G:O) komponen = total,135006.1,0.0,1.0,LOLOS,alpha,tidak,
+17,G1,SR25,148,Scope 3 total 2023,142270.5,10490.7;20623.6;72.7;3927.4;99421.1;7735.0,SUM(G:O) komponen = total,142270.5,0.0,1.0,LOLOS,alpha,tidak,
+18,G2,SR25,51,S1+2 naik 2025 vs 2023 (tertulis hlm 51),16.79,1736327.9;1486664.59,(G/H-1)*100,16.7935196465532,0.00351964655322234,0.1,LOLOS,beta,tidak,
+19,G2,SR25,147,S1+2 naik 2025 vs 2023 (callout hlm 147),19.35,1736327.9;1486664.59,(G/H-1)*100,16.7935196465532,-2.55648035344678,0.1,GAGAL,beta,ya,Callout 19.35% vs tabel 16.79% (hlm 51 & rumus).
+20,G2,SR25,146,Energi total naik YoY 2025,7.28,6984695.3;6510919.2,(G/H-1)*100,7.27663921862216,-0.00336078137783957,0.1,LOLOS,beta,tidak,
+21,G2,SR25,146,Listrik bersih terbarukan +39.33%,39.33,13926.0;9995.0,(G/H-1)*100,39.3296648324162,-0.000335167583799034,0.1,LOLOS,beta,tidak,
+22,G2,SR25,146,BTS surya +31.27%,31.27,361.0;275.0,(G/H-1)*100,31.2727272727273,0.0027272727272738,0.1,LOLOS,beta,tidak,
+23,G2,SR25,144,Penghematan efisiensi +302% vs 2024,302.0,71472.84;17775.45,(G/H-1)*100,302.087373315444,0.0873733154434717,0.5,LOLOS,beta,tidak,Toleransi 0.5 pp (angka tertulis dibulatkan ke bilangan bulat).
+24,G2,SR24,112,Emisi naik 2024 vs 2023 (+5.2%),5.2,1530402.95;1454708.89,(G/H-1)*100,5.20338196324628,0.00338196324627837,0.1,LOLOS,beta,tidak,
+25,G2,SR24,116,Renewable +35.61%,35.61,9955.0;7341.0,(G/H-1)*100,35.6082277618853,-0.00177223811469673,0.1,LOLOS,beta,tidak,
+26,G2,SR24,113,Intensitas turun 7.62% (2024 vs 2023),7.62,1530402.95;20386475.0;1454708.89;17901034.0,-((G/H)/(I/J)-1)*100,7.62261168548961,0.00261168548961077,0.1,LOLOS,beta,tidak,
+27,G2,SR25,51,Intensitas turun 2023-2025 (tertulis 10.82%),10.82,1736327.9;23444838.0;1486664.59;17901034.0,-((G/H)/(I/J)-1)*100,10.8236633508572,0.00366335085714908,0.1,LOLOS,beta,tidak,Hitung 10.83%; selisih 0.01 pp = pembulatan.
+28,G2,SR25,147,Intensitas turun 8.86% (callout; basis 2023-2025),8.86,1736327.9;23444838.0;1486664.59;17901034.0,-((G/H)/(I/J)-1)*100,10.8236633508572,1.96366335085715,0.1,GAGAL,beta,ya,Angka 8.86% tidak cocok dengan basis 2023-2025 (10.83%). Basis lain tidak ditemukan; lihat Diskontinuitas D2.
+29,G2,SR24,112,Scope 2 = 98% dari S1+2,98.0,1511065.65;1530402.95,G/H*100,98.7364569573,0.736456957300035,1.0,LOLOS,beta,tidak,Toleransi 1.0 pp (tertulis bilangan bulat).
+30,G5,SR25,147,"Callout intensitas ""85,207.04 tonCO2e/TB"" -> emisi implisit 2023 vs tabel",1486664.59,85207.04;17901034.0,"(G x H)/1.000.000 ; satuan angka callout = gCO2e/TB (x1000), bukan ton",1525294.12007936,38629.5300793599,8950.517,GAGAL,di_luar_cakupan,di luar cakupan,"Toleransi = 0.0005 tCO2e/TB x payload (pembulatan 3 desimal intensitas tabel). Label satuan ""tonCO2e/TB"" salah faktor 1000."
+31,G5,SR25,181,"GSMA 1.3b: intensitas energi jaringan (MWh/PB), tertulis 5.17",5.17,1425396.53;23444838.0,G / (H/1000),60.7978835255761,55.6278835255761,0.01,GAGAL,di_luar_cakupan,di luar cakupan,"Basis total energi (1,940,193.14 MWh) memberi 82.76; tidak ada basis yang menghasilkan 5.17."
+32,G2,SR25,181,"GSMA 1.3b: perubahan intensitas ""turun 19.50%"" (basis SR24 86.86)",-19.5,1425396.53;23444838.0;86.86,(G/(H/1000)/I-1)*100,-30.0047392061063,-10.5047392061063,0.1,GAGAL,di_luar_cakupan,di luar cakupan,Basis jaringan -30.0%; basis total energi -4.7%; basis 5.17 -94.0%. Tidak ada yang -19.5%.
