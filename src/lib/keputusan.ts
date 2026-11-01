@@ -27,3 +27,10 @@ export const SKENARIO_AWAL_PERSEN_SCOPE2 = [5, 10, 20];
 export const DURASI_NOTIFIKASI_MS = 4000;
 
 export const LABEL_HIPOTETIS = "Hipotetis";
+
+// Satuan isian pengguna di panel parameter.
+export const SATUAN_BIAYA = "Rp";
+export const SATUAN_WAKTU = "bulan";
+
+// Seed tidak memuat batas harga karbon internal; null = tidak ada batas.
+export const BATAS_BIAYA_PER_TON: number | null = null;

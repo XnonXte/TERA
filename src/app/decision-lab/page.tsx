@@ -15,7 +15,7 @@ import {
 import CostEffectivenessChart from "@/components/charts/CostEffectivenessChart";
 import { DecarbonizationOption } from "@/types/tera";
 import { useSeedStore } from "@/stores/useSeedStore";
-import { hitungSkenario, urutkanSkenario, HasilSkenario } from "@/lib/hitung-keputusan";
+import { hitungSkenario, urutkanSkenario, bacaIsian, diAtasBatas, HasilSkenario } from "@/lib/hitung-keputusan";
 import {
   BASELINE,
   GAP_AWAL,
@@ -27,6 +27,9 @@ import {
   PENANDA,
   DURASI_NOTIFIKASI_MS,
   LABEL_HIPOTETIS,
+  SATUAN_BIAYA,
+  SATUAN_WAKTU,
+  BATAS_BIAYA_PER_TON,
 } from "@/lib/keputusan";
 import { fmtAngka, fmtPersen, KOSONG } from "@/lib/format";
 
@@ -34,15 +37,22 @@ const D = KOSONG;
 const HIPOTETIS = LABEL_HIPOTETIS;
 const persen = (x: number) => `${x}%`;
 const ton = (x: number | null | undefined) => (x === null || x === undefined ? D : `${fmtAngka(x)} ${SATUAN}`);
+const rupiah = (x: number | null) => (x === null ? D : `${SATUAN_BIAYA} ${fmtAngka(x)}`);
+const bulan = (x: number | null) => (x === null ? D : `${fmtAngka(x)} ${SATUAN_WAKTU}`);
+const perTon = (x: number | null) => (x === null ? D : `${SATUAN_BIAYA} ${fmtAngka(x)} / ${SATUAN}`);
 
 export default function DecisionLabPage() {
   const { skenario, simpanSkenario, pilihSkenario } = useSeedStore();
   const [persenScope2, setPersenScope2] = useState(RENTANG.min);
   const [persenScope1, setPersenScope1] = useState(RENTANG.min);
+  const [isianBiaya, setIsianBiaya] = useState("");
+  const [isianWaktu, setIsianWaktu] = useState("");
   const [notification, setNotification] = useState("");
+  const biaya = bacaIsian(isianBiaya);
+  const waktu = bacaIsian(isianWaktu);
 
   // Hasil parameter yang sedang diatur di slider
-  const hasil = hitungSkenario(BASELINE, { persenScope2, persenScope1, biaya: null, waktu: null });
+  const hasil = hitungSkenario(BASELINE, { persenScope2, persenScope1, biaya, waktu });
 
   // Skenario tersimpan → bentuk kartu/tabel desain, diurutkan dari pengurangan hipotetis terbesar
   const daftar = useMemo(
@@ -75,13 +85,15 @@ export default function DecisionLabPage() {
   }));
   const toggleOption = (id: string) => pilihSkenario(id);
   const handleSaveScenario = () => {
-    const baru = simpanSkenario(persenScope2, persenScope1);
+    const baru = simpanSkenario(persenScope2, persenScope1, biaya, waktu);
     setNotification(`${baru.id} disimpan: ${baru.nama}`);
     setTimeout(() => setNotification(""), DURASI_NOTIFIKASI_MS);
   };
   const handleReset = () => {
     setPersenScope2(RENTANG.min);
     setPersenScope1(RENTANG.min);
+    setIsianBiaya("");
+    setIsianWaktu("");
   };
 
   return (
@@ -205,7 +217,7 @@ export default function DecisionLabPage() {
             </div>
           </div>
           <div className="text-[12px] text-[#00675e] font-semibold">
-            Biaya per {SATUAN}: {hasil.biayaPerTon === null ? D : fmtAngka(hasil.biayaPerTon)}
+            Biaya per {SATUAN}: {perTon(hasil.biayaPerTon)}
           </div>
         </div>
       </div>
@@ -278,6 +290,50 @@ export default function DecisionLabPage() {
               <span>{persen(PENANDA[2])}</span>
             </div>
           </div>
+
+          {/* Isian biaya implementasi */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="font-semibold text-[#0b1c30]">
+                Biaya implementasi ({SATUAN_BIAYA}):
+              </span>
+              <span className="font-bold text-[#b80035] bg-[#fff1f2] px-2.5 py-0.5 rounded border border-[#ffdad6]">
+                {rupiah(biaya)}
+              </span>
+            </div>
+            <input
+              type="number"
+              min={RENTANG.min}
+              inputMode="decimal"
+              value={isianBiaya}
+              onChange={(e) => setIsianBiaya(e.target.value)}
+              aria-label="Biaya implementasi (Rp)"
+              placeholder="Kosong = belum diisi"
+              className="w-full h-10 px-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 focus:border-[#b80035] transition-all"
+            />
+          </div>
+
+          {/* Isian waktu implementasi */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="font-semibold text-[#0b1c30]">
+                Waktu implementasi ({SATUAN_WAKTU}):
+              </span>
+              <span className="font-bold text-[#00675e] bg-[#ecfdf5] px-2.5 py-0.5 rounded border border-[#a7f3d0]">
+                {bulan(waktu)}
+              </span>
+            </div>
+            <input
+              type="number"
+              min={RENTANG.min}
+              inputMode="decimal"
+              value={isianWaktu}
+              onChange={(e) => setIsianWaktu(e.target.value)}
+              aria-label="Waktu implementasi (bulan)"
+              placeholder="Kosong = belum diisi"
+              className="w-full h-10 px-4 text-[13px] bg-[#f8f9ff] border border-[#dce9ff] rounded-[8px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#00675e]/20 focus:border-[#00675e] transition-all"
+            />
+          </div>
         </div>
       </div>
 
@@ -295,8 +351,8 @@ export default function DecisionLabPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {options.map((opt) => {
             const isOptSelected = opt.selected;
-            const biaya = opt.implementationCostIdr === null ? D : fmtAngka(opt.implementationCostIdr);
-            const waktu = opt.implementationMonths === null ? D : fmtAngka(opt.implementationMonths);
+            const biaya = rupiah(opt.implementationCostIdr);
+            const waktu = bulan(opt.implementationMonths);
 
             return (
               <div
@@ -339,12 +395,12 @@ export default function DecisionLabPage() {
                       className={`text-[12px] font-bold ${
                         (opt.costEffectiveness || 0) < 0
                           ? "text-[#15803d]"
-                          : (opt.costEffectiveness || 0) > 350
+                          : diAtasBatas(opt.costEffectiveness, BATAS_BIAYA_PER_TON)
                           ? "text-[#b80035]"
                           : "text-[#0b1c30]"
                       }`}
                     >
-                      {opt.costEffectiveness === null ? D : `${fmtAngka(opt.costEffectiveness)} / ${SATUAN}`}
+                      {perTon(opt.costEffectiveness)}
                     </span>
                   </div>
 
@@ -440,7 +496,7 @@ export default function DecisionLabPage() {
                     {opt.costEffectiveness === null ? D : fmtAngka(opt.costEffectiveness)}
                   </td>
                   <td className="py-3.5 px-4 text-right text-[#5c5e64]">
-                    {opt.implementationMonths === null ? D : fmtAngka(opt.implementationMonths)}
+                    {bulan(opt.implementationMonths)}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <button
@@ -470,7 +526,7 @@ export default function DecisionLabPage() {
           <p className="text-[#5c5e64] leading-relaxed">
             Baseline FY {TAHUN_BASELINE}: <strong>{fmtAngka(BASELINE.total)} {SATUAN}</strong> (Scope 1 {fmtAngka(BASELINE.scope1)}, Scope 2 {fmtAngka(BASELINE.scope2)}; {SUMBER_BASELINE}). Level target:{" "}
             <strong>{fmtAngka(BASELINE.target)} {SATUAN}</strong> ({STATUS_TARGET}). Parameter yang diatur:{" "}
-            <strong>Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}</strong>; biaya dan waktu implementasi belum diisi.
+            <strong>Scope 2 −{persen(persenScope2)}, Scope 1 −{persen(persenScope1)}</strong>; biaya implementasi {rupiah(biaya)}, waktu {bulan(waktu)} (isian pengguna; kosong = belum diisi).
           </p>
         </div>
       </div>

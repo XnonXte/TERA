@@ -18,7 +18,7 @@ export interface Skenario {
   nama: string;
   persenScope2: number;
   persenScope1: number;
-  biaya: number | null; // belum ada kontrol input pada desain
+  biaya: number | null; // isian pengguna; null = belum diisi
   waktu: number | null;
   dipilih: boolean;
 }
@@ -68,7 +68,7 @@ interface TeraState {
 
   // Decision Lab (hipotetis)
   skenario: Skenario[];
-  simpanSkenario: (persenScope2: number, persenScope1: number) => Skenario;
+  simpanSkenario: (persenScope2: number, persenScope1: number, biaya: number | null, waktu: number | null) => Skenario;
   pilihSkenario: (id: string) => void;
 
   setActivePeriod: (period: string) => void;
@@ -99,15 +99,15 @@ export const useSeedStore = create<TeraState>((set, get) => ({
 
   peristiwa: [],
   skenario: SKENARIO_AWAL,
-  simpanSkenario: (r2, r1) => {
+  simpanSkenario: (r2, r1, biaya, waktu) => {
     const { skenario } = get();
     const baru: Skenario = {
       id: idSkenario(skenario.length + 1),
       nama: namaSkenario(r2, r1),
       persenScope2: r2,
       persenScope1: r1,
-      biaya: null,
-      waktu: null,
+      biaya,
+      waktu,
       dipilih: false,
     };
     set({ skenario: [...skenario, baru] });

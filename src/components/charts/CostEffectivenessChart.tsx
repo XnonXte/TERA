@@ -2,6 +2,9 @@
 
 import React from "react";
 import { DecarbonizationOption } from "@/types/tera";
+import { porsiBatang, diAtasBatas } from "@/lib/hitung-keputusan";
+import { BATAS_BIAYA_PER_TON, SATUAN, SATUAN_BIAYA } from "@/lib/keputusan";
+import { fmtAngka, KOSONG } from "@/lib/format";
 
 interface CostEffectivenessChartProps {
   options: DecarbonizationOption[];
@@ -43,7 +46,7 @@ export default function CostEffectivenessChart({
         <div className="flex items-center gap-2 bg-[#fff1f2] border border-[#ffdad6] px-3 py-1.5 rounded-[8px] text-[11px]">
           <span className="w-2.5 h-0.5 bg-[#b80035] border-t-2 border-dashed border-[#b80035]" />
           <span className="text-[#5c5e64]">
-            Biaya per tCO₂e: <strong className="text-[#b80035]">hanya bila biaya terisi</strong>
+            Batas harga karbon internal: <strong className="text-[#b80035]">{BATAS_BIAYA_PER_TON === null ? "tidak ada di seed" : fmtAngka(BATAS_BIAYA_PER_TON)}</strong>
           </span>
         </div>
       </div>
@@ -51,13 +54,10 @@ export default function CostEffectivenessChart({
       {/* Visual Items */}
       <div className="space-y-3 pt-1">
         {validOptions.map((opt) => {
-          const ratio = opt.costEffectiveness || 0;
-          const isAboveCeiling = ratio > 350;
-          const isNetNegative = ratio < 0;
-          const widthPct = Math.min(
-            100,
-            Math.max(20, ((opt.reductionTco2e || 0) / totalReduction) * 100)
-          );
+          const ratio = opt.costEffectiveness;
+          const isAboveCeiling = diAtasBatas(opt.costEffectiveness, BATAS_BIAYA_PER_TON);
+          const isNetNegative = ratio !== null && ratio < 0;
+          const widthPct = porsiBatang(opt.reductionTco2e, totalReduction);
 
           return (
             <div
@@ -98,7 +98,7 @@ export default function CostEffectivenessChart({
 
                 <div className="flex items-center gap-4 text-right text-[12px]">
                   <div>
-                    <span className="text-[#5c5e64]">MAC: </span>
+                    <span className="text-[#5c5e64]">Biaya per {SATUAN}: </span>
                     <strong
                       className={
                         isNetNegative
@@ -108,13 +108,13 @@ export default function CostEffectivenessChart({
                           : "text-[#0b1c30]"
                       }
                     >
-                      —
+                      {ratio === null ? KOSONG : `${SATUAN_BIAYA} ${fmtAngka(ratio)}`}
                     </strong>
                   </div>
                   <div>
-                    <span className="text-[#5c5e64]">Volume: </span>
+                    <span className="text-[#5c5e64]">Pengurangan: </span>
                     <strong className="text-[#00675e]">
-                      —
+                      {opt.reductionTco2e === null ? KOSONG : `${fmtAngka(opt.reductionTco2e)} ${SATUAN}`}
                     </strong>
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export default function CostEffectivenessChart({
               Isi biaya skenario untuk menghitung
             </span>
             <span>
-              Belum ada skenario dengan biaya terisi
+              {options.filter((o) => o.costEffectiveness === null).length} skenario belum berbiaya
             </span>
           </div>
         )}

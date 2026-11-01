@@ -46,3 +46,21 @@ export function hitungSkenario(b: Baseline, p: ParameterSkenario): HasilSkenario
 export function urutkanSkenario<T extends { hasil: HasilSkenario }>(xs: T[]): T[] {
   return [...xs].sort((a, b) => b.hasil.pengurangan - a.hasil.pengurangan);
 }
+
+/** Isian angka pengguna: kosong, bukan angka, atau negatif → null. */
+export function bacaIsian(s: string): number | null {
+  if (s.trim() === "") return null;
+  const x = Number(s);
+  return Number.isFinite(x) && x >= 0 ? x : null;
+}
+
+/** Lebar batang (%) dari porsi pengurangan terhadap total, dibatasi 0–100. */
+export function porsiBatang(x: number | null, total: number): number {
+  if (x === null || total <= 0) return 0;
+  return Math.min(PERSEN, Math.max(0, (x / total) * PERSEN));
+}
+
+/** Benar hanya bila ada batas; tanpa batas (null) selalu salah. */
+export function diAtasBatas(x: number | null, batas: number | null): boolean {
+  return batas !== null && x !== null && x > batas;
+}

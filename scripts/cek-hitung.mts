@@ -9,7 +9,7 @@ async function muat(rel: string) {
 }
 
 const { dekomposisi, langkahWaterfall } = await muat("../src/lib/hitung-carbon.ts");
-const { hitungSkenario } = await muat("../src/lib/hitung-keputusan.ts");
+const { hitungSkenario, bacaIsian, porsiBatang, diAtasBatas } = await muat("../src/lib/hitung-keputusan.ts");
 const { tambahPeristiwa } = await muat("../src/lib/log.ts");
 const seed = JSON.parse(readFileSync(new URL("../docs-tera/tera_seed.json", import.meta.url), "utf-8"));
 
@@ -49,6 +49,15 @@ cek("Kalkulator 0%: pengurangan", h0.pengurangan, 0);
 cekSama("Kalkulator 0%: biaya per tCO2e tanpa biaya", h0.biayaPerTon, null);
 const h10 = hitungSkenario(b, { persenScope2: 10, persenScope1: 0, biaya: null, waktu: null });
 cek("Kalkulator Scope 2 −10%: pengurangan = 10% × Scope 2", h10.pengurangan, t["2025"].scope2 * 0.1);
+const hb = hitungSkenario(b, { persenScope2: 10, persenScope1: 0, biaya: 1000000, waktu: 12 });
+cek("Biaya per tCO2e = biaya / pengurangan", hb.biayaPerTon, 1000000 / (t["2025"].scope2 * 0.1));
+cekSama("Biaya terisi tetapi pengurangan 0 → biaya per tCO2e null", hitungSkenario(b, { persenScope2: 0, persenScope1: 0, biaya: 1000000, waktu: null }).biayaPerTon, null);
+cekSama("Isian kosong → null", bacaIsian(""), null);
+cekSama("Isian negatif → null", bacaIsian("-5"), null);
+cekSama("Isian bukan angka → null", bacaIsian("abc"), null);
+cekSama("Isian angka dibaca", bacaIsian("2500000"), 2500000);
+cekSama("Porsi batang dibatasi 100", porsiBatang(300, 200), 100);
+cekSama("Tanpa batas harga karbon → tidak pernah di atas batas", diAtasBatas(1e12, null), false);
 
 // 3) Log peristiwa setelah urutan aksi
 const aksi = ["aturan", "ajukan", "tolak", "ajukan", "setujui", "reset", "skenario", "aturan"];
