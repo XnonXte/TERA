@@ -16,14 +16,14 @@ import {
   Hash,
   ExternalLink,
 } from "lucide-react";
-import { AuditEvent } from "@/types/tera";
+import { LogEvent } from "@/types/tera";
 
 // Halaman spesifikasi: belum ada log aktivitas di prototipe ini.
 const SPESIFIKASI = "Spesifikasi";
 const D = "—";
 
 export default function GovernancePage() {
-  const auditEvents: AuditEvent[] = [];
+  const auditEvents: LogEvent[] = [];
 
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("All");

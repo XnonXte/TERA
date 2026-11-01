@@ -404,9 +404,9 @@ export default function CarbonAnalysisPage() {
                     <td className="py-3.5 px-4">
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                          driver.uncertaintyStatus === "verified"
+                          driver.uncertaintyStatus === "terverifikasi"
                             ? "bg-[#dcfce7] text-[#15803d]"
-                            : driver.uncertaintyStatus === "estimated"
+                            : driver.uncertaintyStatus === "estimasi"
                             ? "bg-[#fef3c7] text-[#d97706]"
                             : "bg-[#ffdad6] text-[#b80035]"
                         }`}

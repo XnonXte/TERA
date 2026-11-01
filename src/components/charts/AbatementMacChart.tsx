@@ -18,7 +18,7 @@ export default function AbatementMacChart({
     .sort((a, b) => (a.costEffectiveness || 0) - (b.costEffectiveness || 0));
 
   const totalReduction = validOptions.reduce(
-    (sum, o) => sum + (o.estimatedReductionTco2e || 0),
+    (sum, o) => sum + (o.reductionTco2e || 0),
     0
   );
 
@@ -56,7 +56,7 @@ export default function AbatementMacChart({
           const isNetNegative = ratio < 0;
           const widthPct = Math.min(
             100,
-            Math.max(20, ((opt.estimatedReductionTco2e || 0) / totalReduction) * 100)
+            Math.max(20, ((opt.reductionTco2e || 0) / totalReduction) * 100)
           );
 
           return (
