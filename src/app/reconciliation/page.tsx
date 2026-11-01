@@ -13,79 +13,147 @@ import {
   Upload,
   ChevronDown,
 } from "lucide-react";
-import { useTeraStore } from "@/stores/useTeraStore";
-import { calculateDifference, isVarianceThresholdExceeded } from "@/lib/calculations";
+import { useSeedStore } from "@/stores/useSeedStore";
+import { sumberLaporan } from "@/lib/seed";
+import { calculateDifference } from "@/lib/calculations";
+import {
+  VERSI,
+  cariVersi,
+  bandingkanVersi,
+  variansScope,
+  aksiTersedia,
+  LABEL_STATUS,
+  REVISI,
+  TIDAK_DIREVISI,
+  hitungJenisCatatan,
+} from "@/lib/reconciliation";
+import { SEED } from "@/lib/seed";
+import { fmtAngka, fmtBertanda, fmtPersen, KOSONG } from "@/lib/format";
 
 export default function ReconciliationPage() {
   const {
-    baselines,
-    activeBaselineId,
-    setActiveBaselineId,
-    compareBaselineId,
-    setCompareBaselineId,
-    approveBaseline,
-    rejectBaseline,
-  } = useTeraStore();
+    versiA,
+    versiB,
+    setVersiA,
+    setVersiB,
+    statusVersi,
+    baselineAktif,
+    aksiPersetujuan,
+    resetSimulasi,
+  } = useSeedStore();
+
+  // Nama asli dipertahankan; isinya dari seed.
+  const activeBaselineId = versiA;
+  const setActiveBaselineId = setVersiA;
+  const compareBaselineId = versiB;
+  const setCompareBaselineId = setVersiB;
 
   const [note, setNote] = useState("");
-  const [selectedReason, setSelectedReason] = useState("Boundary Expansion (Perubahan cakupan)");
   const [activeTab, setActiveTab] = useState("All");
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const baseA = baselines.find((b) => b.id === activeBaselineId) || baselines[0];
-  const baseB = baselines.find((b) => b.id === compareBaselineId) || baselines[1];
+  // Tiga versi baseline Scope 1+2 2023 (SR 2023/2024/2025)
+  const baselines = VERSI.map((v) => ({
+    id: v.versi,
+    totalEmissionsTco2e: fmtAngka(v.nilai),
+    status: LABEL_STATUS[statusVersi[v.versi]],
+    sourceRef: v.sumber,
+  }));
+  const baseA = baselines.find((x) => x.id === activeBaselineId) || baselines[0];
+  const baseB = baselines.find((x) => x.id === compareBaselineId) || baselines[1];
 
-  const diffTotal = calculateDifference(
-    baseA.totalEmissionsTco2e,
-    baseB.totalEmissionsTco2e
-  );
+  const va = cariVersi(baseA.id)!;
+  const vb = cariVersi(baseB.id)!;
+  const diffTotal = bandingkanVersi(va, vb);
+  const vs1 = variansScope("Scope 1", baseA.id, baseB.id);
+  const vs2 = variansScope("Scope 2", baseA.id, baseB.id);
+  const diffScope1 = vs1 ? vs1.beda : { absolute: NaN, percentage: null };
+  const diffScope2 = vs2 ? vs2.beda : { absolute: NaN, percentage: null };
+  const nilaiScope = (v: typeof vs1, sisi: "a" | "b") => (v ? fmtAngka(v[sisi].nilai) : KOSONG);
 
-  const diffScope1 = calculateDifference(baseA.scope1Tco2e, baseB.scope1Tco2e);
-  const diffScope2 = calculateDifference(baseA.scope2Tco2e, baseB.scope2Tco2e);
+  // Alur persetujuan (simulasi) pada versi B
+  const statusB = statusVersi[baseB.id];
+  const aksi = aksiTersedia(statusB);
+  const teksKiri = aksi.includes("tolak") ? "Tolak (simulasi)" : "Reset simulasi";
+  const teksKanan = aksi.includes("ajukan")
+    ? `Ajukan untuk review (${baseB.id})`
+    : aksi.includes("setujui")
+    ? `Setujui (simulasi) ${baseB.id}`
+    : `${baseB.id}: ${LABEL_STATUS[statusB]}`;
+  const kananNonaktif = aksi.length === 0;
 
-  const isThresholdTriggered = isVarianceThresholdExceeded(diffTotal.percentage);
+  const tampilkan = (hasil: { ok: boolean; pesan: string }) => {
+    if (hasil.ok) {
+      setSuccessMsg(hasil.pesan);
+      setErrorMsg("");
+      setNote("");
+    } else {
+      setErrorMsg(hasil.pesan);
+      setSuccessMsg("");
+    }
+  };
 
   const handleApprove = () => {
-    if (!note || note.trim().length === 0) {
-      setErrorMsg("Reviewer Note wajib diisi sebelum meratifikasi baseline baru (PRD Section 4.3).");
-      return;
-    }
-
-    approveBaseline(baseB.id, `${selectedReason}: ${note}`);
-    setSuccessMsg(`Baseline ${baseB.id} berhasil diratifikasi dan ditetapkan sebagai Locked Active Footprint.`);
-    setNote("");
-    setErrorMsg("");
+    if (aksi.includes("ajukan")) tampilkan(aksiPersetujuan(baseB.id, "ajukan", note));
+    else if (aksi.includes("setujui")) tampilkan(aksiPersetujuan(baseB.id, "setujui", note));
   };
 
   const handleReject = () => {
-    if (!note || note.trim().length === 0) {
-      setErrorMsg("Reviewer Note wajib diisi untuk alasan penolakan baseline.");
-      return;
+    if (aksi.includes("tolak")) {
+      tampilkan(aksiPersetujuan(baseB.id, "tolak", note));
+    } else {
+      resetSimulasi();
+      setNote("");
+      setErrorMsg("");
+      setSuccessMsg("Simulasi direset. Semua versi kembali ke Draft; baseline aktif: belum ada.");
     }
-
-    rejectBaseline(baseB.id, `${selectedReason}: ${note}`);
-    setSuccessMsg(`Pengajuan baseline ${baseB.id} ditolak dan dikembalikan untuk revisi.`);
-    setNote("");
-    setErrorMsg("");
   };
 
+  // Revisi lintas laporan (18 revisi + 7 identik)
+  const desimal = (x: number) => (Math.abs(x) < 1 ? 3 : 2);
+  const items = [...REVISI, ...TIDAK_DIREVISI].map((r) => {
+    const d = calculateDifference(r.nilaiLama, r.nilaiBaru);
+    const [lamaLaporan, lamaHlm] = r.sumberLama.split(", ");
+    const [baruLaporan, baruHlm] = r.sumberBaru.split(", ");
+    const asal = [...SEED.revisi_18, ...SEED.tidak_direvisi_7].find(
+      (x) => x.metrik === r.metrik && sumberLaporan(x.laporan_baru, x.hlm_baru) === r.sumberBaru
+    );
+    return {
+      id: r.kunci,
+      name: r.metrik,
+      description: r.catatanJenis ?? KOSONG,
+      scope: r.status,
+      vA_emissions: fmtAngka(r.nilaiLama, 3),
+      vA_activity: lamaLaporan,
+      vA_ef: lamaHlm,
+      vB_emissions: fmtAngka(r.nilaiBaru, 3),
+      vB_activity: baruLaporan,
+      vB_ef: baruHlm,
+      diffEmissions: d.absolute,
+      diffTeks: fmtBertanda(d.absolute, desimal(d.absolute)),
+      diffPercent: r.persen,
+      category: r.kodeAlasan,
+      evidence: asal?.hlm_catatan ? sumberLaporan(asal.laporan_baru, asal.hlm_catatan) : KOSONG,
+    };
+  });
+  const jenis = hitungJenisCatatan(REVISI);
+  const jumlahRevisi = REVISI.length;
+
   const filteredItems = useMemo(() => {
-    if (activeTab === "All") return baseA.items;
-    return baseA.items.filter((item) => {
-      if (activeTab === "Boundary" && item.category.toLowerCase().includes("cakupan")) return true;
-      if (activeTab === "Factors" && item.category.toLowerCase().includes("faktor")) return true;
-      if (activeTab === "Activity" && item.category.toLowerCase().includes("aktivitas")) return true;
-      return false;
-    });
-  }, [baseA.items, activeTab]);
+    if (activeTab === "All") return items.filter((x) => x.scope === "Revisi");
+    if (activeTab === "Boundary") return items;
+    if (activeTab === "Factors") return items.filter((x) => x.description === "Catatan umum");
+    if (activeTab === "Activity") return items.filter((x) => x.description === "Tidak ada catatan");
+    return items;
+  }, [items, activeTab]);
 
   return (
     <div className="space-y-6 pb-8">
       {/* 1. Breadcrumb */}
       <nav className="flex items-center gap-2 text-[12px] text-[#5c5e64]">
         <Link href="/overview" className="hover:text-[#0b1c30] transition-colors">
-          Home
+          Beranda
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-[#5c5e64]/60" />
         <span className="font-semibold text-[#0b1c30]">Baseline Reconciliation</span>
@@ -98,15 +166,15 @@ export default function ReconciliationPage() {
             Baseline Reconciliation
           </h1>
           <p className="text-[14px] text-[#5c5e64] mt-1 leading-[20px]">
-            Compare proposed recalculations against your locked base year under ISO 14064-1 &amp; GHG Protocol.
+            Tiga laporan menuliskan angka berbeda untuk baseline Scope 1+2 tahun 2023.
           </p>
         </div>
 
         <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2.5 rounded-[8px] border border-[#dce9ff] shrink-0">
           <Lock className="w-4 h-4 text-[#00675e]" />
           <div className="text-[12px] font-medium text-[#5c5e64]">
-            <span>Active Baseline: </span>
-            <strong className="text-[#0b1c30]">{baseA.id} (Locked)</strong>
+            <span>Baseline aktif (simulasi): </span>
+            <strong className="text-[#0b1c30]">{baselineAktif ?? "Belum ada"}</strong>
           </div>
           <span className="w-2 h-2 rounded-full bg-[#00675e] ml-1" />
         </div>
@@ -118,7 +186,7 @@ export default function ReconciliationPage() {
           {/* Baseline A Container (5 cols) */}
           <div className="md:col-span-5 bg-[#eff4ff] rounded-[10px] p-4 border border-[#dce9ff]">
             <div className="text-[11px] font-bold text-[#5c5e64] uppercase tracking-wider mb-2">
-              Version A (Active Reference)
+              Versi A (pembanding)
             </div>
             <div className="relative">
               <select
@@ -135,7 +203,7 @@ export default function ReconciliationPage() {
               <ChevronDown className="w-4 h-4 text-[#5c5e64] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
             <p className="text-[11px] text-[#5c5e64] mt-2">
-              Audited base year (ISO 14064-1 certified) • Locked 12 Feb 2024
+              Sumber: {baseA.sourceRef}
             </p>
           </div>
 
@@ -149,7 +217,7 @@ export default function ReconciliationPage() {
           {/* Baseline B Container (5 cols) */}
           <div className="md:col-span-5 bg-[#eff4ff] rounded-[10px] p-4 border border-[#dce9ff]">
             <div className="text-[11px] font-bold text-[#5c5e64] uppercase tracking-wider mb-2">
-              Version B (Proposed Target Revision)
+              Versi B (dibandingkan)
             </div>
             <div className="relative">
               <select
@@ -166,27 +234,11 @@ export default function ReconciliationPage() {
               <ChevronDown className="w-4 h-4 text-[#5c5e64] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
             <p className="text-[11px] text-[#5c5e64] mt-2">
-              Includes 42 new BTS towers &amp; updated MEMR grid factor • Pending Sign-off
+              Sumber: {baseB.sourceRef}
             </p>
           </div>
         </div>
 
-        {/* Material Variance Threshold Warning Banner */}
-        {isThresholdTriggered && (
-          <div className="p-4 bg-[#ffdad6]/40 border border-[#ffdad6] rounded-[10px] flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#b80035] shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <div className="text-[13px] font-bold text-[#b80035]">
-                Material Variance Threshold Triggered (+{diffTotal.percentage?.toFixed(2)}% &gt; 5.00%)
-              </div>
-              <p className="text-[12px] text-[#40000c] leading-relaxed">
-                Total variance between <strong>{baseA.id}</strong> and <strong>{baseB.id}</strong> is{" "}
-                <span className="font-bold">+{diffTotal.absolute.toFixed(1)} tCO₂e (+{diffTotal.percentage?.toFixed(2)}%)</span>.
-                Under ISO 14064-1 clause 5.4.2 and Telkomsel ESG Policy, any recalculation exceeding 5.0% requires formal board review, justification documentation, and sign-off before ratification.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 4. 4 Summary KPI Cards */}
@@ -195,19 +247,18 @@ export default function ReconciliationPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Scope 1 Variance
+              Selisih Scope 1 (B − A)
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {diffScope1.absolute >= 0 ? "+" : ""}
-              {diffScope1.absolute.toFixed(1)} tCO₂e
+              {fmtBertanda(diffScope1.absolute)}
+              {" "}tCO₂e
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
             <span className="font-bold text-[#b80035]">
-              {diffScope1.percentage && diffScope1.percentage >= 0 ? "+" : ""}
-              {diffScope1.percentage?.toFixed(1)}%
+              {fmtPersen(diffScope1.percentage)}
             </span>{" "}
-            vs base ({baseA.scope1Tco2e} → {baseB.scope1Tco2e} tCO₂e)
+            terhadap A ({nilaiScope(vs1, "a")} → {nilaiScope(vs1, "b")} tCO₂e)
           </div>
         </div>
 
@@ -215,19 +266,18 @@ export default function ReconciliationPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Scope 2 Variance
+              Selisih Scope 2 (B − A)
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              {diffScope2.absolute >= 0 ? "+" : ""}
-              {diffScope2.absolute.toFixed(1)} tCO₂e
+              {fmtBertanda(diffScope2.absolute)}
+              {" "}tCO₂e
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
             <span className="font-bold text-[#b80035]">
-              {diffScope2.percentage && diffScope2.percentage >= 0 ? "+" : ""}
-              {diffScope2.percentage?.toFixed(1)}%
+              {fmtPersen(diffScope2.percentage)}
             </span>{" "}
-            vs base ({baseA.scope2Tco2e} → {baseB.scope2Tco2e} tCO₂e)
+            terhadap A ({nilaiScope(vs2, "a")} → {nilaiScope(vs2, "b")} tCO₂e)
           </div>
         </div>
 
@@ -235,14 +285,14 @@ export default function ReconciliationPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Net Recalculation Delta
+              Selisih Scope 1+2 (B − A)
             </div>
             <div className="text-[30px] font-bold text-[#b80035] tracking-[-0.9px] leading-tight mt-1">
-              +{diffTotal.absolute.toFixed(1)} tCO₂e
+              {fmtBertanda(diffTotal.absolute)} tCO₂e
             </div>
           </div>
           <div className="text-[12px] text-[#b80035] font-semibold">
-            +{diffTotal.percentage?.toFixed(2)}% Total Net Variance
+            {fmtPersen(diffTotal.percentage)} terhadap A
           </div>
         </div>
 
@@ -250,14 +300,14 @@ export default function ReconciliationPage() {
         <div className="bg-white rounded-[12px] p-5 border border-[#e5eeff] shadow-[0px_4px_2.5px_rgba(0,0,0,0.03)] flex flex-col justify-between h-[150px]">
           <div>
             <div className="text-[13px] font-medium text-[#5c5e64] tracking-[0.11px]">
-              Audit Requirement
+              Kode alasan
             </div>
             <div className="text-[30px] font-bold text-[#0b1c30] tracking-[-0.9px] leading-tight mt-1">
-              Board Approval
+              Unresolved
             </div>
           </div>
           <div className="text-[12px] text-[#5c5e64]">
-            Mandatory (&gt;5.0% threshold)
+            {jumlahRevisi} revisi lintas laporan
           </div>
         </div>
       </div>
@@ -268,10 +318,10 @@ export default function ReconciliationPage() {
         <div className="p-5 border-b border-[#e5eeff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Material Variances &amp; Reconciled Rows
+              Revisi lintas laporan
             </h3>
             <p className="text-[12px] text-[#5c5e64] mt-0.5">
-              Classified by GHG Protocol recalculation policy categories
+              {jumlahRevisi} revisi: {jenis.umum} catatan umum, {jenis.tidakAda} tanpa catatan, {jenis.spesifik} catatan spesifik
             </p>
           </div>
 
@@ -285,7 +335,7 @@ export default function ReconciliationPage() {
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              All ({baseA.items.length})
+              Hanya revisi ({jumlahRevisi})
             </button>
             <button
               type="button"
@@ -296,7 +346,7 @@ export default function ReconciliationPage() {
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Boundary Expansion
+              Semua ({items.length})
             </button>
             <button
               type="button"
@@ -307,7 +357,7 @@ export default function ReconciliationPage() {
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Emission Factors
+              Catatan umum ({jenis.umum})
             </button>
             <button
               type="button"
@@ -318,7 +368,7 @@ export default function ReconciliationPage() {
                   : "text-[#5c5e64] hover:text-[#0b1c30]"
               }`}
             >
-              Activity Correction
+              Tidak ada catatan ({jenis.tidakAda})
             </button>
           </div>
         </div>
@@ -328,14 +378,14 @@ export default function ReconciliationPage() {
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="bg-[#eff4ff] border-b border-[#dce9ff] text-[#5c5e64] text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">EMISSION SOURCE</th>
-                <th className="py-3 px-4">SCOPE</th>
-                <th className="py-3 px-4">{baseA.id} (BASE)</th>
-                <th className="py-3 px-4">{baseB.id} (TARGET)</th>
-                <th className="py-3 px-4 text-right">Δ ABSOLUTE</th>
-                <th className="py-3 px-4 text-right">% VARIANCE</th>
-                <th className="py-3 px-4">JUSTIFICATION CATEGORY</th>
-                <th className="py-3 px-4">EVIDENCE / REF</th>
+                <th className="py-3 px-4">METRIK</th>
+                <th className="py-3 px-4">STATUS</th>
+                <th className="py-3 px-4">NILAI LAMA</th>
+                <th className="py-3 px-4">NILAI BARU</th>
+                <th className="py-3 px-4 text-right">Δ</th>
+                <th className="py-3 px-4 text-right">% SELISIH</th>
+                <th className="py-3 px-4">KODE ALASAN</th>
+                <th className="py-3 px-4">SUMBER CATATAN</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
@@ -352,7 +402,7 @@ export default function ReconciliationPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="font-semibold text-[#0b1c30]">
-                      {item.vA_emissions} tCO₂e
+                      {item.vA_emissions}
                     </div>
                     <div className="text-[11px] text-[#5c5e64]">
                       {item.vA_activity} • {item.vA_ef}
@@ -360,7 +410,7 @@ export default function ReconciliationPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="font-semibold text-[#0b1c30]">
-                      {item.vB_emissions} tCO₂e
+                      {item.vB_emissions}
                     </div>
                     <div className="text-[11px] text-[#5c5e64]">
                       {item.vB_activity} • {item.vB_ef}
@@ -376,22 +426,20 @@ export default function ReconciliationPage() {
                           : "text-[#5c5e64]"
                       }`}
                     >
-                      {item.diffEmissions > 0 ? "+" : ""}
-                      {item.diffEmissions.toFixed(1)} t
+                      {item.diffTeks}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <span
                       className={`font-bold text-[11px] px-2 py-0.5 rounded-full ${
-                        item.diffPercent > 5
+                        item.scope === "Revisi"
                           ? "bg-[#ffdad6] text-[#b80035]"
-                          : item.diffPercent > 0
+                          : item.diffPercent > 0 && item.scope !== "Identik"
                           ? "bg-[#eff4ff] text-[#0b1c30]"
                           : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {item.diffPercent > 0 ? "+" : ""}
-                      {item.diffPercent.toFixed(1)}%
+                      {fmtPersen(item.diffPercent)}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
@@ -415,11 +463,11 @@ export default function ReconciliationPage() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-[#b80035]" />
             <h3 className="text-[16px] font-bold text-[#0b1c30] tracking-[-0.16px]">
-              Reviewer Sign-off &amp; Formal Ratification
+              Persetujuan (simulasi)
             </h3>
           </div>
           <span className="text-[11px] font-semibold text-[#5c5e64]">
-            Action permanently appends to immutable Audit Trail
+            Versi B: {LABEL_STATUS[statusB]} · Baseline aktif: {baselineAktif ?? "Belum ada"}
           </span>
         </div>
 
@@ -439,26 +487,17 @@ export default function ReconciliationPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-[12px] font-bold text-[#0b1c30] block mb-1.5">
-              Primary Justification Category *
+              Kode alasan
             </label>
             <div className="relative">
               <select
-                value={selectedReason}
-                onChange={(e) => setSelectedReason(e.target.value)}
+                value="Unresolved"
+                disabled
+                title="Kode alasan tetap Unresolved"
+                onChange={() => undefined}
                 className="w-full appearance-none bg-[#eff4ff] border border-[#dce9ff] rounded-[8px] p-2.5 text-[13px] font-medium text-[#0b1c30] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 cursor-pointer"
               >
-                <option value="Boundary Expansion (Perubahan cakupan)">
-                  Boundary Expansion (Perubahan cakupan 42 BTS Towers)
-                </option>
-                <option value="Emission Factor Adjustment (MEMR #189)">
-                  Emission Factor Adjustment (MEMR #189 Gazette)
-                </option>
-                <option value="Activity Data Correction (Telemetry Ingestion)">
-                  Activity Data Correction (Telemetry Ingestion)
-                </option>
-                <option value="Accounting Methodology Refinement">
-                  Accounting Methodology Refinement
-                </option>
+                <option value="Unresolved">Unresolved (tetap)</option>
               </select>
               <ChevronDown className="w-4 h-4 text-[#5c5e64] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -466,22 +505,23 @@ export default function ReconciliationPage() {
 
           <div>
             <label className="text-[12px] font-bold text-[#0b1c30] block mb-1.5">
-              Supporting Audit Evidence
+              Bukti pendukung
             </label>
             <div className="flex items-center gap-3 p-2 bg-[#eff4ff] border border-[#dce9ff] rounded-[8px]">
               <FileSpreadsheet className="w-5 h-5 text-[#00675e] shrink-0 ml-1" />
               <div className="flex-1 min-w-0 text-[12px]">
                 <p className="font-semibold text-[#0b1c30] truncate">
-                  Baseline_Recalculation_Evidence_v2025.xlsx
+                  —
                 </p>
-                <p className="text-[11px] text-[#5c5e64]">2.4 MB • SHA-256 Verified</p>
+                <p className="text-[11px] text-[#5c5e64]">Spesifikasi</p>
               </div>
               <button
                 type="button"
-                onClick={() => alert("File attachment verified and archived into audit repository.")}
+                disabled
+                title="Spesifikasi"
                 className="px-2.5 py-1 text-[11px] font-semibold text-[#0b1c30] bg-white rounded border border-[#c4c6cd]/40 hover:bg-gray-50"
               >
-                Replace
+                Ganti
               </button>
             </div>
           </div>
@@ -489,7 +529,7 @@ export default function ReconciliationPage() {
 
         <div>
           <label className="text-[12px] font-bold text-[#0b1c30] block mb-1.5">
-            Executive Reviewer Notes * (Mandatory for Ratification)
+            Alasan perubahan * (wajib)
           </label>
           <textarea
             rows={2}
@@ -498,7 +538,7 @@ export default function ReconciliationPage() {
               setNote(e.target.value);
               if (errorMsg) setErrorMsg("");
             }}
-            placeholder="e.g., Board ratified addition of 42 BTS towers and updated MEMR 2024 grid factor. Net recalculation is audited per ISO 14064-1."
+            placeholder="Tulis alasan perubahan untuk versi B"
             className="w-full bg-[#eff4ff] border border-[#dce9ff] rounded-[8px] p-3 text-[13px] text-[#0b1c30] placeholder:text-[#5c5e64] focus:outline-none focus:ring-2 focus:ring-[#b80035]/20 resize-none"
           />
         </div>
@@ -509,14 +549,15 @@ export default function ReconciliationPage() {
             onClick={handleReject}
             className="px-5 py-2.5 rounded-[8px] bg-[#fff1f2] border border-[#ffdad6] text-[#b80035] hover:bg-[#ffe4e6] font-semibold text-[13px] transition-colors"
           >
-            Reject Baseline Revision
+            {teksKiri}
           </button>
           <button
             type="button"
             onClick={handleApprove}
+            disabled={kananNonaktif}
             className="px-6 py-2.5 rounded-[8px] bg-[#b80035] hover:bg-[#9f002d] text-white font-semibold text-[13px] shadow transition-colors"
           >
-            Ratify Baseline {baseB.id}
+            {teksKanan}
           </button>
         </div>
       </div>
